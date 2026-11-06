@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Groundtruth</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<main class="pop">
+  <header><h1>Groundtruth</h1><p>Microburbs facts for any City of Sydney home</p></header>
+  <form id="f">
+    <label for="addr">Type an address</label>
+    <input id="addr" autocomplete="off" placeholder="12/45 Crown Street, Surry Hills NSW 2010" required>
+    <button type="submit">Look up</button>
+  </form>
+  <section id="out" aria-live="polite"></section>
+  <footer id="health">Checking proxy…</footer>
+</main>
+<script src="popup.js"></script>
+</body>
+</html>

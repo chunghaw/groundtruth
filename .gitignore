@@ -1,0 +1,17 @@
+# secrets & supplied data — never commit (hackathon rules)
+.env
+.env.*
+!.env.example
+data/
+*.csv
+!eval/heldout-labels.csv
+api-output/
+node_modules/
+.next/
+.vercel/
+dist/
+coverage/
+.DS_Store
+.data/
+*.tsbuildinfo
+next-env.d.ts

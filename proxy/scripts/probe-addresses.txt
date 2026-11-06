@@ -1,0 +1,22 @@
+# One address per line. Run: npm run probe -- scripts/probe-addresses.txt
+902/417-419 Bourke Street, Surry Hills NSW 2010
+Unit 903, 174-182 Goulburn Street, Surry Hills NSW 2010
+1 Bligh Street, Sydney NSW 2000
+Level 9, 88 Cumberland Street, The Rocks NSW 2000
+12/150 Victoria Street, Potts Point NSW 2011
+3 Macleay Street, Potts Point NSW 2011
+G03/12 Pyrmont Bridge Road, Camperdown NSW 2050
+C902/1 Bunn Street, Pyrmont NSW 2009
+20E/88 Lower Fort Street, Millers Point NSW 2000
+1A Hill Street, Glebe NSW 2037
+45 Glebe Point Road, Glebe NSW 2037
+2/7 Riley Street, Woolloomooloo NSW 2011
+801/2 Defries Avenue, Zetland NSW 2017
+15 Wilson Street, Newtown NSW 2042
+101/1 Phillip Street, Erskineville NSW 2043
+7 Regent Street, Redfern NSW 2016
+304/45 Macleay Street, Elizabeth Bay NSW 2011
+9 Lawson Street, Paddington NSW 2021
+1205/28 Harbour Street, Haymarket NSW 2000
+33 Mountain Street, Ultimo NSW 2007
+14 Church Street, Parramatta NSW 2150

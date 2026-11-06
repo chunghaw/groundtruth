@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+.data/
+api-output/
+node_modules/
+.next/
+.vercel/
+*.csv
+next-env.d.ts
+*.tsbuildinfo
