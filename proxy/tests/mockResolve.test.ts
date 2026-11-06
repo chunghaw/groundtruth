@@ -13,5 +13,6 @@ describe("mock mode end-to-end resolve", () => {
   it("even number no unit -> EXACT house", async () => expect((await run("12 Crown Street, Surry Hills")).state).toBe("EXACT"));
   it("NOMATCH -> NO_MATCH", async () => expect((await run("12 Nomatch Street, Surry Hills")).state).toBe("NO_MATCH"));
   it("Parramatta -> OUT_OF_AREA", async () => expect((await run("12 Church Street, Parramatta")).state).toBe("OUT_OF_AREA"));
+  it("Twin street -> CHOOSE", async () => expect((await run("7 Twin Lane, Ultimo NSW 2007")).state).toBe("CHOOSE"));
   it("is deterministic", async () => expect(await run("4/10 Crown Street, Surry Hills")).toEqual(await run("4/10 Crown Street, Surry Hills")));
 });

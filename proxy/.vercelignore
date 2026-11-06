@@ -1,0 +1,10 @@
+node_modules
+.next
+.env*
+!.env.example
+api-output
+.data
+.vercel
+*.csv
+tests
+*.tsbuildinfo

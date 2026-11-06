@@ -3,6 +3,7 @@
  *
  * Geocode rules (so the extension lane can exercise every resolver state):
  *  - query containing "NOMATCH"           -> no candidates          (NO_MATCH)
+ *  - street containing "Twin"              -> two records, same address (CHOOSE)
  *  - unit given ("4/10 Crown St, ...")     -> that unit + 2 siblings (EXACT)
  *  - no unit, odd street number            -> units 1..4 only        (BUILDING)
  *  - no unit, even street number           -> one house              (EXACT)
@@ -38,6 +39,10 @@ function geocodeMock(q: string): Upstream {
     const display = `${unit ? `${unit}/` : ""}${number} ${street}, ${suburb}`;
     return { id: mockGnaf(display), name: display, display_name: display, abbr: display.toUpperCase().replace(",", ""), property_type: unit ? "unit" : "house" };
   };
+  if (/\bTWIN\b/i.test(street)) {
+    const one = mk(a.unit, a.number);
+    return ok([one, { ...one, id: mockGnaf(`${one.display_name}#2`) }]);
+  }
   if (a.unit) {
     const n = Number(a.unit);
     const sib = Number.isFinite(n) ? [String(n + 1), String(n + 2)] : [`${a.unit}A`, `${a.unit}B`];

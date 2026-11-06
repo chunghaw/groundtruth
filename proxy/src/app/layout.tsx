@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-export const metadata = { title: "Groundtruth proxy" };
+export const metadata = { title: "Groundtruth" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

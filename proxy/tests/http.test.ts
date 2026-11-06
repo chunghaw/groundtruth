@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { allowedOrigin, checkClient, rateLimited, parseResolveBody, isGnafId } from "@/lib/http";
+import { allowedOrigin, checkClient, isSameOriginRequest, rateLimited, parseResolveBody, isGnafId } from "@/lib/http";
 
 const reqWith = (headers: Record<string, string>) => new Request("http://x/api/resolve", { headers });
 
@@ -31,6 +31,43 @@ describe("checkClient", () => {
     vi.stubEnv("GROUNDTRUTH_CLIENT_TOKEN", "");
     vi.stubEnv("NODE_ENV", "development");
     expect(checkClient(reqWith({}))).toBe(true);
+  });
+});
+
+describe("same-origin demo access", () => {
+  const demoReq = (headers: Record<string, string>) => new Request("https://gt.example.app/api/resolve", { headers: { host: "gt.example.app", ...headers } });
+
+  it("detects same-origin browser requests by Origin or Referer", () => {
+    expect(isSameOriginRequest(demoReq({ origin: "https://gt.example.app" }))).toBe(true);
+    expect(isSameOriginRequest(demoReq({ referer: "https://gt.example.app/demo", "sec-fetch-site": "same-origin" }))).toBe(true);
+    expect(isSameOriginRequest(demoReq({ origin: "https://evil.example" }))).toBe(false);
+    expect(isSameOriginRequest(demoReq({ origin: "https://gt.example.app", "sec-fetch-site": "cross-site" }))).toBe(false);
+    expect(isSameOriginRequest(demoReq({}))).toBe(false);
+    expect(isSameOriginRequest(new Request("https://x/api", { headers: { origin: "https://gt.example.app" } }))).toBe(false);
+  });
+
+  it("lets the demo page in without the token in mock mode, but keeps the token gate for everyone else", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("GROUNDTRUTH_CLIENT_TOKEN", "s3cret");
+    vi.stubEnv("MOCK", "1");
+    expect(checkClient(demoReq({ origin: "https://gt.example.app" }))).toBe(true);
+    expect(checkClient(demoReq({ origin: "chrome-extension://abcdefghijklmnop" }))).toBe(false);
+    expect(checkClient(demoReq({ origin: "https://www.realestate.com.au" }))).toBe(false);
+    expect(checkClient(demoReq({}))).toBe(false);
+    expect(checkClient(demoReq({ origin: "chrome-extension://abcdefghijklmnop", "x-groundtruth-client": "s3cret" }))).toBe(true);
+  });
+
+  it("is off with a live key unless explicitly enabled, and can be disabled", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("GROUNDTRUTH_CLIENT_TOKEN", "s3cret");
+    vi.stubEnv("MOCK", "");
+    vi.stubEnv("MICROBURBS_API_KEY", "real-key");
+    expect(checkClient(demoReq({ origin: "https://gt.example.app" }))).toBe(false);
+    vi.stubEnv("GROUNDTRUTH_DEMO", "1");
+    expect(checkClient(demoReq({ origin: "https://gt.example.app" }))).toBe(true);
+    vi.stubEnv("MOCK", "1");
+    vi.stubEnv("GROUNDTRUTH_DEMO", "0");
+    expect(checkClient(demoReq({ origin: "https://gt.example.app" }))).toBe(false);
   });
 });
 

@@ -9,3 +9,5 @@ node_modules/
 *.csv
 next-env.d.ts
 *.tsbuildinfo
+.vercel
+.env*

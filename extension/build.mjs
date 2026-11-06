@@ -19,4 +19,13 @@ const opts = {
   },
   logLevel: 'info',
 };
-if (watch) { const ctx = await context(opts); await ctx.watch(); } else { await build(opts); }
+// Web demo target: same panel code as a standalone ES module (no chrome.* APIs).
+const webOpts = {
+  entryPoints: { 'groundtruth-panel': 'src/web/groundtruth-panel.ts' },
+  bundle: true, outdir: 'dist-web', format: 'esm', target: 'es2020', minify: !watch, sourcemap: false, logLevel: 'info',
+};
+rmSync('dist-web', { recursive: true, force: true });
+if (watch) {
+  const ctx = await context(opts); await ctx.watch();
+  const wctx = await context(webOpts); await wctx.watch();
+} else { await build(opts); await build(webOpts); }

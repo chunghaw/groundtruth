@@ -1,5 +1,6 @@
 import type { AddressParts } from "./normalise";
 import type { ResolveRequest } from "./resolve";
+import { isMock } from "./microburbs";
 
 const LISTING_ORIGINS = /^https:\/\/(www\.)?(realestate\.com\.au|domain\.com\.au)$/;
 const EXTENSION_ORIGIN = /^chrome-extension:\/\/[a-p]{32}$|^chrome-extension:\/\/[a-z0-9]+$/;
@@ -29,8 +30,41 @@ function safeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-/** Shared-token check. No token configured: open in dev, closed in production. */
+function originOf(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).host;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * True when a browser request comes from a page served by this same deployment (the /demo page).
+ * Browsers send Origin on POST and Referer on same-origin GET; Sec-Fetch-Site, when present, must agree.
+ */
+export function isSameOriginRequest(req: Request): boolean {
+  const host = req.headers.get("x-forwarded-host")?.split(",")[0].trim() || req.headers.get("host");
+  if (!host) return false;
+  const fetchSite = req.headers.get("sec-fetch-site");
+  if (fetchSite && fetchSite !== "same-origin") return false;
+  const src = originOf(req.headers.get("origin")) ?? originOf(req.headers.get("referer"));
+  return src !== null && src === host;
+}
+
+/**
+ * The public demo page calls the API without the extension token. Headers can be forged by non-browser
+ * clients, so this is only on in mock mode (no Microburbs key spend) unless GROUNDTRUTH_DEMO=1; GROUNDTRUTH_DEMO=0 turns it off.
+ */
+export function demoSameOriginEnabled(): boolean {
+  const flag = process.env.GROUNDTRUTH_DEMO;
+  if (flag === "0") return false;
+  return flag === "1" || isMock();
+}
+
+/** Shared-token check. No token configured: open in dev, closed in production. Same-origin demo calls allowed (see above). */
 export function checkClient(req: Request): boolean {
+  if (demoSameOriginEnabled() && isSameOriginRequest(req)) return true;
   const expected = process.env.GROUNDTRUTH_CLIENT_TOKEN;
   if (!expected) return process.env.NODE_ENV !== "production";
   return safeEqual(req.headers.get("x-groundtruth-client") ?? "", expected);
