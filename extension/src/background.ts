@@ -1,5 +1,7 @@
 import type { BgRequest, LookupResult } from './api-types';
 import { getFacts, lookup } from './lookup';
+import './context3d/background-handler';
+import './briefing/background-handler';
 
 chrome.runtime.onMessage.addListener((msg: BgRequest, _sender, sendResponse) => {
   if (msg?.type === 'gt:lookup') {

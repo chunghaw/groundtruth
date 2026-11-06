@@ -52,3 +52,34 @@ export async function fetchFacts(gnafId: string, f: Fetch = fetch): Promise<Fact
   if (!r || typeof r.facts !== 'object') throw new ProxyError('Proxy facts response missing fields', 'bad-response');
   return r;
 }
+
+export interface BriefingPayload { readonly script: string; readonly audio: ArrayBuffer | null }
+const BRIEFING_TIMEOUT_MS = 20_000; // voice synthesis is slower than a facts lookup
+
+/** POST /api/briefing/:gnafId. Audio replies carry the script in X-Briefing-Script; JSON replies have audio: null. */
+export async function fetchBriefing(gnafId: string, f: Fetch = fetch, context3d?: unknown): Promise<BriefingPayload> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), BRIEFING_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await f(`${proxy.base}/api/briefing/${encodeURIComponent(gnafId)}`, {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: { 'Content-Type': 'application/json', ...(proxy.token ? { [CLIENT_HEADER]: proxy.token } : {}) },
+      body: JSON.stringify(context3d ? { context3d } : {}),
+    });
+    if (!res.ok) throw new ProxyError(`Proxy returned HTTP ${res.status}`, 'http');
+    if (/audio\//i.test(res.headers.get('content-type') ?? '')) {
+      const script = decodeURIComponent(res.headers.get('x-briefing-script') ?? '');
+      return { script, audio: await res.arrayBuffer() };
+    }
+    const body = (await res.json()) as { script?: unknown };
+    if (typeof body?.script !== 'string') throw new ProxyError('Proxy briefing response missing script', 'bad-response');
+    return { script: body.script, audio: null };
+  } catch (e) {
+    if (e instanceof ProxyError) throw e;
+    throw new ProxyError(`Groundtruth proxy unreachable at ${proxy.base || 'this site'}`, 'unreachable');
+  } finally {
+    clearTimeout(timer);
+  }
+}

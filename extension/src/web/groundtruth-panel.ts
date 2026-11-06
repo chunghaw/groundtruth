@@ -11,6 +11,9 @@ import { parseAddressLine } from '../extract/parseAddress';
 import type { Extraction } from '../extract/types';
 import { getFacts, lookup } from '../lookup';
 import { manualExtraction } from '../manual';
+import { configureContext3DProxy } from '../context3d/api';
+import { webContext3DHost } from '../context3d/host-web';
+import { webBriefingHost } from '../briefing/host-web';
 
 export interface MountOptions {
   /** Proxy origin; '' (default) means same origin as the page. */
@@ -21,6 +24,10 @@ export interface MountOptions {
   readonly siteName?: string;
   /** Observability hook for demos (e.g. a log of dropped stale responses). */
   readonly onEvent?: (e: GroundtruthEvent) => void;
+  /** 3D "What can rise next door" card; false disables it. */
+  readonly context3d?: false;
+  /** Where groundtruth-map3d.js and the MapLibre worker live; default: next to this module. */
+  readonly assetBase?: string;
 }
 
 export type GroundtruthEvent =
@@ -48,6 +55,7 @@ const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export function mount(container: HTMLElement, options: MountOptions = {}): GroundtruthHandle {
   configureProxy({ proxyBase: options.proxyBase ?? '', clientToken: options.clientToken ?? '' });
+  configureContext3DProxy({ proxyBase: options.proxyBase ?? '', clientToken: options.clientToken ?? '' });
   const emit = options.onEvent ?? (() => {});
   const site = options.siteName ?? 'this page';
   const current = new CurrentListing();
@@ -61,7 +69,7 @@ export function mount(container: HTMLElement, options: MountOptions = {}): Groun
       onManual: (text) => void run(manualExtraction(text), null),
       onRetry: () => { if (lastListing) void run(lastListing, null); },
     },
-    { container, siteLabel: (ex) => (ex.source === 'manual' && ex.from === 'manual' ? 'you' : site) },
+    { container, siteLabel: (ex) => (ex.source === 'manual' && ex.from === 'manual' ? 'you' : site), context3d: options.context3d === false ? undefined : webContext3DHost(options.assetBase ?? import.meta.url), briefing: webBriefingHost },
   );
 
   async function run(ex: Extraction, bedrooms: number | null, delayMs = 0): Promise<void> {

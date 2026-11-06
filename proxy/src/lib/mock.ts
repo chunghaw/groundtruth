@@ -12,6 +12,7 @@
 import { parseAddress, titleCase } from "./normalise";
 import { FALLBACK_AREA_SUBURBS } from "./area";
 import type { Upstream } from "./microburbs";
+import { mock3dUpstream } from "./mock3d";
 
 export function hash(s: string): number {
   let h = 2166136261;
@@ -85,6 +86,8 @@ function propertyMock(gnaf: string, what: string): Upstream {
 export async function mockUpstream(pathAndQuery: string): Promise<Upstream> {
   const url = new URL(pathAndQuery, "http://mock");
   const p = url.pathname;
+  const ctx3d = mock3dUpstream(p);
+  if (ctx3d) return ctx3d;
   if (p === "/v1/geocode/address") return geocodeMock(url.searchParams.get("address") ?? "");
   if (p === "/v1/suburbs/list") return ok(FALLBACK_AREA_SUBURBS.map((suburb) => ({ suburb, state: "NSW" })));
   const strata = p.match(/^\/v1\/suburbs\/([^/]+)\/market\/strata-levies$/);

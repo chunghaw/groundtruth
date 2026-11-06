@@ -1,6 +1,7 @@
 import type { Fact, FactsResponse } from '../api-types';
 import { h } from './dom';
 import { compareGuide, money, parseGuidePrice, pct, pickNumber, pickString, type AvmRange } from './format';
+import { offerCeilingCard, type GuideBus } from './offerCard';
 
 const UNDERQUOTE_ALERT = 0.4; // 40%+ of the agency's recent sales went above guide
 
@@ -69,7 +70,8 @@ function rangeBar(rng: AvmRange, guide: number | null): HTMLElement {
     guide !== null ? h('div', { class: 'guide', style: `left:${pos(guide)}` }) : null);
 }
 
-export function avmCard(fact: Fact | undefined, guideState: { value: string }): HTMLElement {
+/** With `listeners`, the guide input lives in the Realistic budget card and this card only reacts to it. */
+export function avmCard(fact: Fact | undefined, guideState: { value: string }, listeners?: Array<() => void>): HTMLElement {
   return card('Microburbs value', fact, (d) => {
     const rng = avmRange(d);
     if (!rng) return null;
@@ -88,6 +90,7 @@ export function avmCard(fact: Fact | undefined, guideState: { value: string }): 
     };
     const input = h('input', { type: 'text', inputmode: 'decimal', placeholder: 'e.g. $1.1m', 'aria-label': 'Guide price you were quoted', value: guideState.value,
       onInput: (e: Event) => { guideState.value = (e.target as HTMLInputElement).value; update(); } });
+    if (listeners) listeners.push(update);
     queueMicrotask(update);
     const date = pickString(d, ['prediction_date', 'date']);
     return [
@@ -96,8 +99,8 @@ export function avmCard(fact: Fact | undefined, guideState: { value: string }): 
       barSlot,
       h('div', { class: 'range-labels' }, h('span', {}, money(rng.low)), h('span', {}, money(rng.high))),
       conf !== null ? h('div', { class: 'conf' }, h('span', {}, 'confidence'), h('div', { class: 'meter' }, h('i', { style: `width:${Math.min(100, conf <= 1 ? conf * 100 : conf)}%` })), h('span', {}, pct(conf))) : null,
-      h('label', { class: 'sub', style: 'display:block;margin-top:10px' }, 'Type the guide you were given (stays on this page):'),
-      h('div', { class: 'guide-row' }, input),
+      listeners ? null : h('label', { class: 'sub', style: 'display:block;margin-top:10px' }, 'Type the guide you were given (stays on this page):'),
+      listeners ? null : h('div', { class: 'guide-row' }, input),
       verdict,
     ].filter(Boolean) as HTMLElement[];
   }, 'hero');
@@ -168,6 +171,7 @@ export function basicsSection(fact: Fact | undefined): HTMLElement {
 
 export function factCards(facts: FactsResponse, guideState: { value: string }): HTMLElement[] {
   const f = facts.facts;
-  return [agentQuotingCard(f.agentQuoting), avmCard(f.avm, guideState), saleHistoryCard(f.saleHistory),
+  const bus: GuideBus = { state: guideState, listeners: [] };
+  return [agentQuotingCard(f.agentQuoting), offerCeilingCard(f.avm, f.agentQuoting, bus), avmCard(f.avm, guideState, bus.listeners), saleHistoryCard(f.saleHistory),
     streetCard(f.streetProfile), risksCard(f.risks), strataCard(f.strataLevy), basicsSection(f.basics)];
 }

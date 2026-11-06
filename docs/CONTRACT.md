@@ -34,3 +34,26 @@ Each fact is `{ "available": boolean, "data": <trimmed object> | null, "reason"?
 
 ## GET /api/health → `{ ok: true, mock: boolean }`
 Mock mode (`MOCK=1` or no key): returns deterministic fake data so the extension can be built before the key arrives.
+
+## POST /api/briefing/:gnafId
+Body (optional): `{ "context3d"?: object }`. If absent, the proxy looks up the 3D context itself (≤ 4 s, optional).
+- `ELEVENLABS_API_KEY` set and TTS succeeds → `200 audio/mpeg`, the spoken script URI-encoded in `X-Briefing-Script` (exposed to CORS).
+- Otherwise → `200 { "script": string, "audio": null }`; the client speaks it with browser TTS.
+Script: ≤ 75 words, numbers spoken as words ("about one point one million"): value range, agency quoting honesty,
+what can rise nearby (if 3D data), top risk overlay, strata levy (units). Same token gate + rate limit as other routes;
+uncached voice synthesis has its own tighter bucket. Audio cached in memory by gnafId + script hash.
+
+## GET /api/context3d/:gnafId  ("What can rise next door" 3D card)
+Same auth gate as /api/facts. Cached in memory per GNAF for 1 h. Coordinates rounded to 6 dp; overlays clipped to a ±200 m box.
+```json
+{ "gnafId": "GANSW...", "available": true, "center": [lng, lat], "radiusM": 200,
+  "lots": { "type": "FeatureCollection", "features": [ { "geometry": Polygon|MultiPolygon,
+     "properties": { "gnafId": "...", "isSubject": false, "maxHeightM": 45 | null,
+                     "source": "hob" | "fsr-estimate" | "none", "fsr": 3 | null, "storeys": 14 | null } } ] },
+  "noise": FeatureCollection<{color, opacity}> | null, "busyRoads": FeatureCollection<{roadClass}> | null,
+  "subject": { "maxHeightM": 12, "storeys": 4, "source": "hob" } | null,
+  "tallestNeighbour": { "maxHeightM": 45, "storeys": 14, "source": "hob", "distanceM": 58, "direction": "west" } | null,
+  "heightSource": "hob" | "fsr-estimate" | "mixed" | "none", "notes": ["..."] }
+```
+Height per lot = HOB polygon containing the lot centroid. No HOB: FSR fallback `height = FSR ÷ 0.5 site cover × 3.2 m/storey` (cap 80 m), `source: "fsr-estimate"`, labelled "estimated from FSR". Storeys = round(h / 3.2).
+Upstream: `/v1/properties/{g}/surroundings/parcels`, `/v1/properties/{g}/profile` (suburb), `/v1/suburbs/{s}/development/building-controls`, `/v1/suburbs/{s}/shapes/noise-heatmap?geojson=true`, `/v1/suburbs/{s}/shapes/busy-roads?geojson=true`. All shape parsing is in `proxy/src/lib/context3d.ts` `parse*`.

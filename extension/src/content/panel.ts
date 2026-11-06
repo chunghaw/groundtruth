@@ -3,6 +3,10 @@ import type { Extraction } from '../extract/types';
 import { factCards } from './cards';
 import { h } from './dom';
 import { PANEL_CSS } from './styles';
+import { BriefingControl, BRIEFING_CSS, type BriefingDeps } from './briefing';
+import { OFFER_CSS } from './offerCard';
+import { context3dCard, CONTEXT3D_CSS } from '../context3d/card';
+import type { Context3DHost } from '../context3d/types';
 
 export type PanelView =
   | { readonly kind: 'loading'; readonly ex: Extraction }
@@ -24,6 +28,10 @@ export interface PanelOptions {
   readonly container?: HTMLElement;
   /** Override the "from" site label in the match receipt. */
   readonly siteLabel?: (ex: Extraction) => string;
+  /** Plumbing for the spoken 30-second briefing; omitted -> no button. */
+  readonly briefing?: BriefingDeps;
+  /** Data + map surface for the "What can rise next door" 3D card; omitted -> no card. */
+  readonly context3d?: Context3DHost;
 }
 
 const STATE_LABEL: Record<MatchState | 'LOADING' | 'ERROR', string> = {
@@ -39,11 +47,16 @@ export class Panel {
   private collapsed = false;
   private view: PanelView | null = null;
   private guide = { value: '' };
+  private readonly briefing: BriefingControl | null;
+  private c3: { gnafId: string; el: HTMLElement } | null = null;
 
   constructor(private readonly handlers: PanelHandlers, private readonly opts: PanelOptions = {}) {
     this.host = document.createElement('groundtruth-panel');
     this.root = this.host.attachShadow({ mode: 'closed' });
     this.root.append(h('style', {}, PANEL_CSS));
+    this.root.append(h('style', {}, OFFER_CSS + BRIEFING_CSS));
+    this.briefing = opts.briefing ? new BriefingControl(opts.briefing) : null;
+    this.root.append(h('style', {}, CONTEXT3D_CSS));
     this.wrap = h('div', { class: 'gt' });
     this.root.append(this.wrap);
     try { this.collapsed = sessionStorage.getItem('gt:collapsed') === '1'; } catch { /* storage blocked */ }
@@ -55,7 +68,7 @@ export class Panel {
     if (!this.host.isConnected) (this.opts.container ?? document.documentElement).append(this.host);
   }
 
-  destroy(): void { this.host.remove(); }
+  destroy(): void { this.briefing?.stop(); this.host.remove(); }
 
   resetGuide(): void { this.guide = { value: '' }; }
 
@@ -70,10 +83,24 @@ export class Panel {
       h('header', { class: 'top' },
         h('div', { class: 'brand' }, 'Groundtruth', h('small', {}, 'Microburbs facts')),
         h('div', { class: 'spacer' }),
+        this.briefingButton(view),
         h('span', { class: `pill ${state}` }, STATE_LABEL[state]),
         h('button', { class: 'icon-btn', 'aria-label': 'Collapse panel', onClick: () => this.toggle() }, '›')),
-      h('div', { class: 'body' }, ...this.bodyFor(view)));
+      h('div', { class: 'body' }, this.briefing && this.briefingGnaf(view) ? this.briefing.captions() : null, ...this.bodyFor(view)));
     this.wrap.replaceChildren(tab, sheet);
+  }
+
+  /** The home a briefing can talk about: a result with facts loaded. */
+  private briefingGnaf(v: PanelView): string | null {
+    if (v.kind !== 'result' || !v.facts) return null;
+    return v.picked?.gnafId ?? v.resolve.gnafId ?? null;
+  }
+
+  private briefingButton(v: PanelView): HTMLElement | null {
+    if (!this.briefing) return null;
+    const gnafId = this.briefingGnaf(v);
+    if (!gnafId) { this.briefing.release(); return null; }
+    return this.briefing.button(gnafId);
   }
 
   private toggle(): void {
@@ -121,9 +148,21 @@ export class Panel {
       else out.push(h('div', { class: 'err', role: 'alert' }, h('b', {}, 'Facts unavailable'), v.factsError ?? 'The proxy did not return facts.',
         h('div', { style: 'margin-top:8px' }, h('button', { class: 'btn', onClick: () => this.handlers.onRetry() }, 'Try again'))));
     }
+    const c3 = this.context3d(v);
+    if (c3) out.push(c3);
     out.push(this.wrongHome(v.ex));
     out.push(h('div', { class: 'foot' }, 'Only the address was read from this page. Data: Microburbs, G-NAF.'));
     return out;
+  }
+
+  /** 3D card for EXACT (the home) or BUILDING (any unit shares the lot). Reused across re-renders so the map survives. */
+  private context3d(v: Extract<PanelView, { kind: 'result' }>): HTMLElement | null {
+    const st = v.picked ? 'EXACT' : v.resolve.state;
+    if (!this.opts.context3d || (st !== 'EXACT' && st !== 'BUILDING')) return null;
+    const gnafId = v.picked?.gnafId ?? v.resolve.gnafId ?? v.resolve.candidates[0]?.gnafId ?? null;
+    if (!gnafId) return null;
+    if (this.c3?.gnafId !== gnafId) this.c3 = { gnafId, el: context3dCard(gnafId, this.opts.context3d) };
+    return this.c3.el;
   }
 
   private buildingBlock(v: Extract<PanelView, { kind: 'result' }>): HTMLElement {

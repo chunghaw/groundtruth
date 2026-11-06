@@ -42,7 +42,8 @@ describe('Panel', () => {
     expect(t).toContain('$4,200/yr');
     const titles = [...q(p, '.card h3')].map((e) => e.textContent);
     expect(titles[0]).toBe('Agency quoting accuracy');
-    expect(titles[1]).toBe('Microburbs value');
+    expect(titles[1]).toBe('Realistic budget');
+    expect(titles[2]).toBe('Microburbs value');
   });
 
   it('BUILDING shows bedroom buttons that call back', () => {

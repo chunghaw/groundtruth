@@ -4,6 +4,8 @@ import type { Extraction } from '../extract/types';
 import { manualExtraction } from '../manual';
 import { Panel, type PanelView } from './panel';
 import { CurrentListing, watchListing } from './watch';
+import { extensionContext3DHost } from '../context3d/host-extension';
+import { extensionBriefingHost } from '../briefing/host-extension';
 
 const current = new CurrentListing();
 let firstExtraction = true;
@@ -19,7 +21,7 @@ function send<T>(msg: BgRequest): Promise<T> {
 function keyFor(ex: Extraction): string { return `${ex.source}:${ex.listingId ?? ex.raw}`; }
 
 function ensurePanel(): Panel {
-  if (!panel) panel = new Panel({ onBedrooms: (n) => run(true, n), onPick: pick, onManual: manual, onRetry: () => { manualOverride = null; run(true); } });
+  if (!panel) panel = new Panel({ onBedrooms: (n) => run(true, n), onPick: pick, onManual: manual, onRetry: () => { manualOverride = null; run(true); } }, { context3d: extensionContext3DHost, briefing: extensionBriefingHost });
   return panel;
 }
 
