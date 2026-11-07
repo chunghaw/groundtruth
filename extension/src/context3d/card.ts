@@ -63,10 +63,9 @@ export function context3dCard(gnafId: string, host: Context3DHost, location: Lat
   const stage = h('div', { class: 'c3-stage', 'aria-label': '3D model of your home and what could legally rise on nearby lots' });
   const tools = h('div', { class: 'c3-tools' });
   const legend = h('div', { class: 'c3-legend' });
-  const foot = h('div', { class: 'c3-foot' });
+  const foot = h('div', { class: 'c3-foot', hidden: true });
   const card = h('section', { class: 'card c3', 'aria-label': 'What can rise next door' },
-    h('h3', {}, 'What can rise next door'),
-    h('div', { class: 'sub' }, "Today's buildings, with glass volumes where planning rules allow 2+ more storeys."),
+    h('h3', { title: "Today's buildings, with glass volumes where planning rules allow 2+ more storeys." }, 'What can rise next door'),
     caption, stage, tools, legend, foot);
 
   const toggle = (layer: Overlay, label: string) => {
@@ -104,9 +103,9 @@ export function context3dCard(gnafId: string, host: Context3DHost, location: Lat
     tools.replaceChildren(seg);
     stage.append(reset);
     legend.replaceChildren(
-      h('span', { class: 'c3-ramp', style: `background:${GHOST_RAMP_CSS}` }), h('span', {}, '+2 to +10 storeys allowed above today'),
+      h('span', { class: 'c3-ramp', style: `background:${GHOST_RAMP_CSS}` }), h('span', {}, '+2 to +10 storeys allowed'),
       h('span', { class: 'c3-dot' }), h('span', {}, 'your home'),
-      ...(d.heightSource === 'mixed' || d.heightSource === 'fsr-estimate' ? [h('span', { class: 'c3-est' }, 'Some limits estimated from FSR')] : []));
+      ...(d.heightSource === 'mixed' || d.heightSource === 'fsr-estimate' ? [h('span', { class: 'c3-est' }, 'Some estimated')] : []));
     foot.textContent = ['Permitted heights: planning height limits (LEP/FSR) via Microburbs. Planning limits, not approved DAs. Today’s heights: OpenStreetMap.', ...d.notes].join(' ');
   };
 

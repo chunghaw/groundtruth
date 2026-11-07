@@ -21,9 +21,9 @@ describe('guide check card', () => {
   it('sits right after the agency card and owns the single guide input', () => {
     const host = mountCards(facts(AQ, AVM));
     const titles = [...host.querySelectorAll('section > h3')].map((e) => e.textContent);
-    expect(titles.slice(0, 3)).toEqual(['Agency quoting accuracy', TITLE, 'Microburbs value range']);
+    expect(titles.slice(0, 3)).toEqual(['Agency quoting', 'Check a guide', 'Value range']);
     expect(host.querySelectorAll('input').length).toBe(1);
-    expect(host.querySelector('.card.offer label')?.textContent).toBe('Guide the agent told you (typed by you — we never read prices from the listing)');
+    expect(host.querySelector('.card.offer label')?.textContent).toBe('Guide you were quoted');
   });
 
   it('Belvoir St: $900k typed differs from the $800k on record and is 15% above the estimate', async () => {
@@ -36,10 +36,10 @@ describe('guide check card', () => {
     expect(guide.value).toBe('$900k');
     const card = host.querySelector('.card.offer')!;
     const pills = [...card.querySelectorAll('.offer-pill')].map((e) => e.textContent);
-    expect(pills).toEqual(['Differs from the guide on record ($800k)', 'Inside the range, but 15% above Microburbs’ estimate of $785k']);
+    expect(pills).toEqual(['Differs from the guide on record ($800k)']);
     expect(card.textContent).not.toContain('believable');
-    expect(card.textContent).toContain('Microburbs estimate $785k (likely range $612k–$958k)');
-    expect(card.textContent).toContain('about $935k if this agency runs true to form');
+    expect(card.textContent).toContain('Inside the range, but 15% above Microburbs’ estimate of $785k');
+    expect(card.querySelector('[aria-live]')?.getAttribute('title')).toContain('about $935k if this agency runs true to form');
     expect(host.querySelector('.range .guide')).not.toBeNull();
     expect(host.querySelector('.guide-verdict')?.textContent).toBe('Your $900k is 15% above the estimate, inside the likely range');
   });

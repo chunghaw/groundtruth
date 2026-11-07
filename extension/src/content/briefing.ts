@@ -44,7 +44,7 @@ export function fromBase64(b64: string): ArrayBuffer {
   return out.buffer;
 }
 
-const IDLE_LABEL = '▶ 30-sec briefing';
+const IDLE_LABEL = '▶ Listen · 30s';
 
 export class BriefingControl {
   private phase: Phase = 'idle';
