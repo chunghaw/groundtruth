@@ -29,7 +29,7 @@ describe('Panel', () => {
     const t = text(p);
     expect(t).toContain('Exact');
     expect(t).toContain('GANSW1');
-    expect(t).toContain('13 of 21 recent sales sold above the guide');
+    expect(t).toContain('13 of 21 of this agency’s recent sales sold above their guide');
     expect(t).toContain('Guide $900k → Sold $960k');
     expect(t).toContain('(+6.7%)');
     expect(t).toContain('Treat the advertised guide as a floor, not an estimate');

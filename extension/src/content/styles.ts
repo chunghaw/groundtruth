@@ -261,6 +261,11 @@ ol.tl li:first-child::before { background: var(--ink); border-color: var(--ink);
 ol.tl li[hidden] { display: none; }
 ol.tl .when { color: var(--ink-3); font-size: 11px; }
 ol.tl .what { color: var(--ink); font-weight: 600; }
+ol.tl.aq-sales li { display: block; }
+ol.tl.aq-sales .addr { display: block; color: var(--ink); font-weight: 600; }
+ol.tl.aq-sales .what { font-weight: 500; color: var(--ink-2, var(--ink)); }
+ol.tl.aq-sales .when-inline { color: var(--ink-3); font-size: 11px; }
+.aq-others { margin-top: 14px; }
 .delta { font: 650 10.5px/1 var(--sans); padding: 3px 6px; border-radius: 999px; background: var(--grey-wash); color: var(--grey); }
 .delta.up { background: var(--warn-wash); color: var(--warn); } .delta.down { background: var(--ok-wash); color: var(--ok); }
 .more { background: none; border: 0; padding: 6px 0 0; margin-left: -14px; cursor: pointer; font: 600 11.5px/1 var(--sans); color: var(--harbour); }

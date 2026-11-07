@@ -27,20 +27,33 @@ export function underquoteRate(d: unknown): number | null {
   return raw === null ? null : raw > 1 ? raw / 100 : raw;
 }
 
-/** "7 of 10 recent sales sold above the guide", or null when the count or rate is missing. */
+/** "7 of 10 of this agency’s recent sales sold above their guide", or null when the count or rate is missing. */
 export function salesAboveGuide(d: unknown): string | null {
   const rate = underquoteRate(d);
   const n = pickNumber(d, ['total_sales', 'n_sales', 'sample_size']);
   if (rate === null || n === null || n < 1 || rate < 0 || rate > 1) return null;
   const total = Math.round(n);
   const above = Math.min(total, Math.round(rate * total));
-  return `${above} of ${total} recent sale${total === 1 ? '' : 's'} sold above the guide`;
+  return `${above} of ${total} of this agency’s recent sale${total === 1 ? '' : 's'} sold above their guide`;
 }
 
 export interface PriceEstimate {
   readonly price: number;
   readonly label: string;
   readonly range: { readonly low: number; readonly high: number } | null;
+  /** The working behind the number, e.g. "This home's guide $800k + this agency's typical +3.9% (median of 10 sales)". */
+  readonly working?: string;
+}
+
+/** "This home’s guide $800k + this agency’s typical +3.9% (median of 10 sales)"; null without this home's asking price. */
+export function priceWorking(q: unknown): string | null {
+  const ask = pickNumber(q, ['asking_price']);
+  const dev = pickNumber(q, ['median_deviation_pct', 'avg_gap_pct']);
+  if (ask === null || ask <= 0 || dev === null) return null;
+  const n = pickNumber(q, ['total_sales', 'n_sales', 'sample_size']);
+  const sign = dev >= 0 ? '+' : '−';
+  const median = n !== null && n > 0 ? ` (median of ${Math.round(n)} sale${Math.round(n) === 1 ? '' : 's'})` : '';
+  return `This home’s guide ${money(ask)} + this agency’s typical ${sign}${fmtPct(dev)}%${median}`;
 }
 
 /** Headline price: agency likely sale price → Microburbs AVM → buyer's guide × (1 + agency median deviation). */
@@ -48,7 +61,10 @@ export function priceEstimate(facts: FactsResponse | null, guideInput = ''): Pri
   const aq = facts?.facts.agentQuoting;
   const q = aq?.available ? aq.data : null;
   const likely = pickNumber(q, ['likely_sale_price']);
-  if (likely !== null && likely > 0) return { price: likely, label: 'Based on this agency’s guide-vs-sold record', range: null };
+  if (likely !== null && likely > 0) {
+    const working = priceWorking(q);
+    return { price: likely, label: 'Based on this agency’s guide-vs-sold record', range: null, ...(working ? { working } : {}) };
+  }
   const avm = facts?.facts.avm;
   const a = avm?.available ? avm.data : null;
   const mid = pickNumber(a, ['predicted_price', 'value', 'estimate', 'mid']);
@@ -69,6 +85,7 @@ export function priceBlockEl(p: PriceEstimate): HTMLElement {
   return h('div', { class: 'price-block', role: 'status' },
     h('p', { class: 'kicker' }, 'Estimated price'),
     h('p', { class: 'price' }, 'Likely to sell for about ', h('b', {}, money(p.price))),
+    p.working ? h('p', { class: 'psub working' }, p.working) : null,
     h('p', { class: 'psub' }, p.range ? `${p.label} · 80% range ${money(p.range.low)}–${money(p.range.high)}` : p.label));
 }
 
@@ -92,7 +109,7 @@ export function quotingVerdict(facts: FactsResponse | null): Verdict | null {
     };
   }
   if (rate !== null) {
-    const head: [string, string, string] = above ? ['', above.replace(/ sold above the guide$/, ''), ' sold above the guide'] : ['', pct(rate), ' of this agency’s sales sold above the guide'];
+    const head: [string, string, string] = above ? ['', above.replace(/ sold above their guide$/, ''), ' sold above their guide'] : ['', pct(rate), ' of this agency’s sales sold above the guide'];
     return { kicker: 'Price guide check', headline: head, sub: agency, tone: rate >= UNDERQUOTE_ALERT ? 'warn' : 'ok' };
   }
   return null;

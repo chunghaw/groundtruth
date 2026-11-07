@@ -62,6 +62,24 @@ function deviationScale(dev: number): HTMLElement {
     h('div', { class: 'scale-labels' }, h('span', {}, `${lo}%`), h('span', { style: `left:${pos(0)}` }, 'at guide'), h('span', {}, `+${hi}%`)));
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** "2026-03-14" → "Mar 2026"; null when unparseable. */
+export function monthYear(iso: string): string | null {
+  const m = /^(\d{4})-(\d{2})/.exec(iso);
+  const i = m ? Number(m[2]) - 1 : -1;
+  return m && i >= 0 && i < 12 ? `${MONTHS[i]} ${m[1]}` : null;
+}
+
+const ABBR: ReadonlyArray<[RegExp, string]> = [[/\bRoad\b/gi, 'Rd'], [/\bStreet\b/gi, 'St'], [/\bAvenue\b/gi, 'Ave'], [/\bParade\b/gi, 'Pde'], [/\bPlace\b/gi, 'Pl'], [/\bLane\b/gi, 'Ln'], [/\bDrive\b/gi, 'Dr'], [/\bCrescent\b/gi, 'Cres'], [/\bHighway\b/gi, 'Hwy'], [/\bTerrace\b/gi, 'Tce']];
+/** "5/68 Bayswater Road, Rushcutters Bay NSW 2011" → "5/68 Bayswater Rd, Rushcutters Bay". */
+export function shortAddress(a: string | null): string | null {
+  if (!a) return null;
+  let s = a.replace(/[,\s]+(NSW|VIC|QLD|SA|WA|TAS|ACT|NT)\b[\s,]*(\d{4})?\s*$/i, '').replace(/[,\s]+\d{4}\s*$/, '');
+  for (const [re, to] of ABBR) s = s.replace(re, to);
+  const t = s.replace(/\s+/g, ' ').trim();
+  return t || null;
+}
+
 const signedPct = (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${fmtPct(n)}%`;
 
 /** "Mild Underquoter" → "Mild underquoter". */
@@ -85,9 +103,13 @@ export function agentQuotingCard(fact: Fact | undefined): HTMLElement {
     const recent = Array.isArray(data?.recent_sales) ? data.recent_sales.slice(0, 3) : [];
     const rows = recent.map((x: any) => {
       const diff = pickNumber(x, ['diff_pct']);
-      return h('li', {}, h('span', { class: 'when' }, String(x.sold_date ?? x.date ?? '').slice(0, 10) || 'recent'),
+      const addr = shortAddress(pickString(x, ['address', 'street_address']));
+      const when = monthYear(String(x.sold_date ?? x.date ?? ''));
+      return h('li', {},
+        addr ? h('span', { class: 'addr' }, addr) : null,
         h('span', { class: 'what' }, `Guide ${money(pickNumber(x, ['guide_price']))} → Sold ${money(pickNumber(x, ['sold_price']))}`),
-        diff !== null ? h('span', { class: `delta ${diff > 3 ? 'up' : diff < -3 ? 'down' : ''}` }, `(${signedPct(diff)})`) : null);
+        diff !== null ? h('span', { class: `delta ${diff > 3 ? 'up' : diff < -3 ? 'down' : ''}` }, ` (${signedPct(diff)})`) : null,
+        when ? h('span', { class: 'when-inline' }, ` · ${when}`) : null);
     });
     return [
       headline ? h('div', { class: 'big aq-head' }, headline) : null,
@@ -95,7 +117,8 @@ export function agentQuotingCard(fact: Fact | undefined): HTMLElement {
       cohort ? h('span', { class: 'cohort-pill' }, cohortLabel(cohort)) : null,
       dev !== null ? h('div', { class: 'scale-title' }, `How far sales landed from the guide (median ${signedPct(dev)})`) : null,
       dev !== null ? deviationScale(dev) : null,
-      rows.length ? h('ol', { class: 'tl', 'aria-label': 'Recent agency sales: guide vs sold' }, ...reveal(rows, 2, 'sales')) : null,
+      rows.length ? h('div', { class: 'scale-title aq-others' }, 'This agency’s other recent sales') : null,
+      rows.length ? h('ol', { class: 'tl aq-sales', 'aria-label': 'This agency’s other recent sales: guide vs sold' }, ...reveal(rows, 2, 'sales')) : null,
       alert ? h('div', { class: 'note', role: 'note' }, 'Treat the advertised guide as a floor, not an estimate') : null,
     ].filter(Boolean) as HTMLElement[];
   }, alert ? 'alert' : '', 'Microburbs · agency sales, guide vs sold');
