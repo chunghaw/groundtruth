@@ -1,0 +1,13 @@
+{
+  "_note": "DRAFT values from eval/results.md (run 2026-11-06). Update after the final held-out run, then re-run voiceover.ts + cards.ts + assemble.sh.",
+  "heldOutN": "30",
+  "exactPrecision": "88.9%",
+  "exactPrecisionSpoken": "eighty-nine percent",
+  "exactRate": "16 of 20",
+  "falseMatches": "2 of 30",
+  "falseMatchesSpoken": "two",
+  "outOfArea": "4 of 4",
+  "overall": "22 of 30",
+  "repoUrl": "github.com/chunghaw/groundtruth",
+  "demoUrl": "groundtruth-tawny-one.vercel.app/demo"
+}

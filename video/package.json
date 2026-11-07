@@ -1,0 +1,13 @@
+{
+  "name": "groundtruth-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "capture": "node capture.ts",
+    "voiceover": "node voiceover.ts",
+    "assemble": "bash assemble.sh"
+  },
+  "devDependencies": {
+    "playwright": "1.55.0"
+  }
+}

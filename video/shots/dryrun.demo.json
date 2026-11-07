@@ -1,0 +1,72 @@
+{
+  "vars": {
+    "DEMO": "https://groundtruth-tawny-one.vercel.app/demo"
+  },
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "deviceScaleFactor": 1.5,
+  "extension": false,
+  "blockers": [],
+  "init": [],
+  "beats": {
+    "x1-receipt": {
+      "setup": [
+        {
+          "do": "goto",
+          "url": "{{DEMO}}"
+        },
+        {
+          "do": "waitPanel",
+          "selector": ".pill.EXACT",
+          "timeout": 30000
+        }
+      ],
+      "show": [
+        {
+          "do": "scrollPanelTo",
+          "selector": "section.receipt",
+          "block": "center"
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt dl dd:nth-of-type(4)"
+        }
+      ]
+    },
+    "x2-building": {
+      "setup": [
+        {
+          "do": "scrollPage",
+          "y": 0
+        }
+      ],
+      "show": [
+        {
+          "do": "selectPage",
+          "selector": ".demo-controls select",
+          "value": "building"
+        },
+        {
+          "do": "waitPanel",
+          "selector": ".pill.BUILDING",
+          "timeout": 20000
+        },
+        {
+          "do": "scrollPanelTo",
+          "selector": "section[aria-label='Narrow down the unit']",
+          "block": "center"
+        },
+        {
+          "do": "clickPanel",
+          "selector": ".beds button:nth-child(2)"
+        },
+        {
+          "do": "waitPanel",
+          "selector": ".beds button[aria-pressed='true']"
+        }
+      ]
+    }
+  }
+}

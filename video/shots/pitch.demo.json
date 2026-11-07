@@ -1,0 +1,118 @@
+{
+  "vars": {
+    "DEMO": "https://groundtruth-tawny-one.vercel.app/demo"
+  },
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "deviceScaleFactor": 1.5,
+  "extension": false,
+  "blockers": [],
+  "init": [
+    {
+      "do": "goto",
+      "url": "{{DEMO}}"
+    },
+    {
+      "do": "waitPanel",
+      "selector": ".pill.EXACT",
+      "timeout": 30000
+    }
+  ],
+  "beats": {
+    "p1-hook": {
+      "setup": [
+        {
+          "do": "goto",
+          "url": "{{DEMO}}"
+        },
+        {
+          "do": "waitPanel",
+          "selector": ".pill.EXACT",
+          "timeout": 30000
+        },
+        {
+          "do": "waitPanel",
+          "selector": "section[aria-label='Agency quoting accuracy']",
+          "timeout": 25000
+        }
+      ],
+      "show": [
+        {
+          "do": "pause",
+          "ms": 600
+        },
+        {
+          "do": "scrollPanelTo",
+          "selector": "section[aria-label='Agency quoting accuracy']",
+          "block": "center",
+          "at": 4.0
+        }
+      ]
+    },
+    "p2-receipt": {
+      "setup": [
+        {
+          "do": "scrollPanelTo",
+          "selector": "section.receipt",
+          "block": "center"
+        }
+      ],
+      "show": [
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt dl dd:nth-of-type(1)"
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt dl dd:nth-of-type(4)",
+          "at": 2.8
+        }
+      ]
+    },
+    "p3-underquote": {
+      "setup": [],
+      "show": [
+        {
+          "do": "scrollPanelTo",
+          "selector": "section[aria-label='Agency quoting accuracy']",
+          "block": "center"
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section[aria-label='Agency quoting accuracy'] .big"
+        },
+        {
+          "do": "scrollPanelTo",
+          "selector": "section[aria-label='Realistic budget'], section[aria-label='Microburbs value']",
+          "block": "center",
+          "at": 4.2
+        },
+        {
+          "do": "typePanel",
+          "selector": "#gt-guide, input[aria-label='Guide price you were quoted']",
+          "text": "$1.1m"
+        },
+        {
+          "do": "waitPanel",
+          "selector": ".offer-pill, .guide-verdict.below, .guide-verdict.above, .guide-verdict.inside"
+        }
+      ]
+    },
+    "p5-close": {
+      "setup": [
+        {
+          "do": "scrollPage",
+          "y": 0
+        }
+      ],
+      "show": [
+        {
+          "do": "mouseTo",
+          "value": "500,400"
+        }
+      ]
+    }
+  }
+}

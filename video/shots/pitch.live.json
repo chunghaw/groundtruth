@@ -1,0 +1,128 @@
+{
+  "vars": {
+    "REA_EASY_URL": "REPLACE_ME https://www.realestate.com.au/property-..."
+  },
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "deviceScaleFactor": 1.5,
+  "extension": true,
+  "blockers": [
+    "#onetrust-banner-sdk",
+    "#onetrust-consent-sdk .ot-sdk-container",
+    "[aria-label*='cookie' i][role='dialog']",
+    "[class*='CookieBanner']"
+  ],
+  "init": [
+    {
+      "do": "goto",
+      "url": "{{REA_EASY_URL}}"
+    },
+    {
+      "do": "waitPanel",
+      "selector": ".pill.EXACT",
+      "timeout": 30000
+    }
+  ],
+  "beats": {
+    "p1-hook": {
+      "setup": [
+        {
+          "do": "goto",
+          "url": "{{REA_EASY_URL}}"
+        },
+        {
+          "do": "waitPanel",
+          "selector": ".pill.EXACT",
+          "timeout": 25000
+        },
+        {
+          "do": "waitPanel",
+          "selector": "section[aria-label='Agency quoting accuracy']",
+          "timeout": 25000
+        }
+      ],
+      "show": [
+        {
+          "do": "pause",
+          "ms": 600
+        },
+        {
+          "do": "scrollPanelTo",
+          "selector": "section[aria-label='Agency quoting accuracy']",
+          "block": "start",
+          "at": 4.0
+        }
+      ]
+    },
+    "p2-receipt": {
+      "crop": "1280:720:640:90",
+      "setup": [
+        {
+          "do": "scrollPanelTo",
+          "selector": "section.receipt"
+        }
+      ],
+      "show": [
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt dl dd:nth-of-type(1)"
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt dl dd:nth-of-type(4)",
+          "at": 2.8
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt .checks",
+          "optional": true,
+          "at": 4.6
+        }
+      ]
+    },
+    "p3-underquote": {
+      "crop": "1280:720:640:90",
+      "setup": [],
+      "show": [
+        {
+          "do": "scrollPanelTo",
+          "selector": "section[aria-label='Agency quoting accuracy']"
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section[aria-label='Agency quoting accuracy'] .big"
+        },
+        {
+          "do": "scrollPanelTo",
+          "selector": "section[aria-label='Realistic budget'], section[aria-label='Microburbs value']",
+          "at": 4.2
+        },
+        {
+          "do": "typePanel",
+          "selector": "#gt-guide, input[aria-label='Guide price you were quoted']",
+          "text": "$1.1m"
+        },
+        {
+          "do": "waitPanel",
+          "selector": ".offer-pill, .guide-verdict.below, .guide-verdict.above, .guide-verdict.inside"
+        }
+      ]
+    },
+    "p5-close": {
+      "setup": [
+        {
+          "do": "scrollPanelTo",
+          "selector": "section.receipt"
+        }
+      ],
+      "show": [
+        {
+          "do": "mouseTo",
+          "value": "500,400"
+        }
+      ]
+    }
+  }
+}

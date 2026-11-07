@@ -1,0 +1,97 @@
+{
+  "deck": "demo",
+  "title": "Groundtruth: 3-minute demo",
+  "maxTotalSec": 180,
+  "titleSec": 2.5,
+  "endSec": 3.0,
+  "tailPadSec": 0.4,
+  "beats": [
+    {
+      "id": "d01-rea-open", "window": "0:03-0:15", "maxSec": 12,
+      "vo": "This is Groundtruth, a Chrome extension for home buyers. Open a realestate.com.au listing and the panel slides in beside it. It reads only the address, nothing else on the page.",
+      "caption": "[[Chrome extension]] · reads only the listing's address",
+      "action": "Easy REA listing loads; panel appears and turns green (Exact)."
+    },
+    {
+      "id": "d02-receipt", "window": "0:15-0:28", "maxSec": 13,
+      "vo": "First, the address match receipt: what it read, where it read it from, the normalised address, and the exact G-NAF home, with every check shown. Wrong home? One click and you type it.",
+      "caption": "[[Address match]] receipt: read → normalised → exact G-NAF home",
+      "action": "Cursor walks down the receipt rows; hovers 'Wrong home?'."
+    },
+    {
+      "id": "d03-facts", "window": "0:28-0:42", "maxSec": 14,
+      "vo": "Then the data, from the Microburbs API. The hero is this agency's underquoting rate: how often their sales beat the advertised guide. Then the value range, sale history, street versus suburb, and risks.",
+      "caption": "Live [[Microburbs API]] data: agency underquoting, value, sales, street, risks",
+      "action": "Scroll through Agency quoting accuracy → Microburbs value → Last sales → Street vs suburb → Risk overlays."
+    },
+    {
+      "id": "d04-offer", "window": "0:42-0:53", "maxSec": 11,
+      "vo": "Type the guide the agent gave you. Groundtruth places it on the value range and tells the buyer whether it sits below, so you know your real offer ceiling.",
+      "caption": "Your guide vs the 80% range → realistic [[offer ceiling]] (never leaves the page)",
+      "action": "Type \"$1.1m\" into the guide box; dashed guide marker and verdict appear."
+    },
+    {
+      "id": "d05-domain-unit", "window": "0:53-1:05", "maxSec": 12,
+      "vo": "Domain listings are messier. This unit's heading is formatted differently, but the address match still lands on the exact unit, read from Domain's page data and checked against the listing ID.",
+      "caption": "Messy Domain unit → still the exact unit ([[address match]] by listing ID)",
+      "action": "Domain unit listing loads; receipt shows 'page data (id-matched)'."
+    },
+    {
+      "id": "d06-spa-switch", "window": "1:05-1:16", "maxSec": 11,
+      "vo": "Domain also swaps listings without reloading. A late answer for the old listing is dropped, so you never see the last home's numbers on this one.",
+      "caption": "In-page listing switch: stale answers are [[dropped]], never shown",
+      "action": "Click a similar listing (in-page navigation); panel re-reads the new address."
+    },
+    {
+      "id": "d07-hidden-unit", "window": "1:16-1:29", "maxSec": 13,
+      "vo": "Some listings hide the unit number. Groundtruth won't guess. It lists the units in the building and asks how many bedrooms. Tap two, and the list narrows.",
+      "caption": "Hidden unit: no guessing. Tap [[bedrooms]] to narrow the building",
+      "action": "Building listing → amber 'Building' state → tap 2 → unit list narrows → pick a unit."
+    },
+    {
+      "id": "d08-out-of-area", "window": "1:29-1:36", "maxSec": 7,
+      "vo": "Outside the City of Sydney pilot area, it says so plainly, and makes no data call at all.",
+      "caption": "Out of area: said plainly, [[no data call]]",
+      "action": "Parramatta listing → grey 'Out of area' state."
+    },
+    {
+      "id": "d09-next-door", "window": "1:36-1:49", "maxSec": 13,
+      "vo": "Now the part listings never show: what can legally rise next door. The 3D view raises each neighbouring lot to its planning height limit, so a buyer sees whether that view is protected.",
+      "caption": "3D: what can [[legally rise next door]] (planning height limits)",
+      "action": "Open the 3D next-door view and orbit slowly."
+    },
+    {
+      "id": "d10-briefing", "window": "1:49-1:56", "maxSec": 8,
+      "vo": "At an inspection? Press play for a thirty-second spoken briefing of everything on the panel.",
+      "caption": "30-second spoken [[briefing]]",
+      "action": "Press the briefing play button; captions follow the audio."
+    },
+    {
+      "id": "d11-accuracy", "window": "1:56-2:10", "maxSec": 14,
+      "vo": "Does the address match hold up? We froze {{heldOutN}} real listings before testing. Exact-home precision was {{exactPrecisionSpoken}}, every out-of-area listing was caught, and we report the {{falseMatchesSpoken}} wrong matches openly.",
+      "caption": "Held-out: {{exactPrecision}} exact precision · {{outOfArea}} out-of-area · {{falseMatches}} wrong",
+      "action": "Accuracy table slide.",
+      "still": {
+        "name": "accuracy-demo", "heading": "[[Address match]] on {{heldOutN}} held-out listings",
+        "rows": [["Exact-home precision", "{{exactPrecision}}"], ["Labelled-exact listings matched", "{{exactRate}}"], ["Out-of-area caught", "{{outOfArea}}"], ["Wrong home returned", "{{falseMatches}}"], ["Overall agreement with label", "{{overall}}"]],
+        "note": "Labels frozen before the run · eval/FROZEN.md · eval/results.md"
+      }
+    },
+    {
+      "id": "d12-limits", "window": "2:10-2:22", "maxSec": 12,
+      "vo": "Limits. City of Sydney's twenty-nine suburbs only, for now. The value is a Microburbs estimate, not a valuation. And when a listing hides the address entirely, you type it.",
+      "caption": "Limits, stated plainly",
+      "action": "Limits slide.",
+      "still": {
+        "name": "limits", "heading": "Limits",
+        "bullets": ["City of Sydney's [[29 suburbs]] only, for now", "Value is a Microburbs [[estimate]], not a valuation", "Address hidden entirely? You [[type it]] in the panel", "Hidden units need the buyer's bedroom count"]
+      }
+    },
+    {
+      "id": "d13-close", "window": "2:22-2:28", "maxSec": 7,
+      "vo": "Groundtruth. Built on the Microburbs API, ready for any property extension.",
+      "caption": "Built on the [[Microburbs API]] · ready for any property extension",
+      "action": "Back on the first listing with the panel open; end card follows."
+    }
+  ]
+}

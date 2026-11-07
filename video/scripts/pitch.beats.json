@@ -1,0 +1,73 @@
+{
+  "deck": "pitch",
+  "title": "Groundtruth: 45-second pitch",
+  "maxTotalSec": 45,
+  "titleSec": 1.0,
+  "endSec": 2.0,
+  "tailPadSec": 0.3,
+  "beats": [
+    {
+      "id": "p1-hook",
+      "window": "0-8 s",
+      "maxSec": 8.0,
+      "vo": "Listings show you the house. Groundtruth shows you what can legally go up next door, and how far this agency's guides miss the sale price.",
+      "caption": "Groundtruth: a [[Chrome extension]] for home buyers",
+      "action": "Panel already open beside a real realestate.com.au listing (EXACT). Slow pan down the panel."
+    },
+    {
+      "id": "p2-receipt",
+      "window": "8-15 s",
+      "maxSec": 7.0,
+      "vo": "It's a Chrome extension that reads only the address, then shows an address match receipt: the exact home, every check visible.",
+      "caption": "[[Address match]] receipt: reads only the address, pins the exact G-NAF home",
+      "action": "Cursor rests on the match receipt (read / from / normalised / g-naf / checks)."
+    },
+    {
+      "id": "p3-underquote",
+      "window": "15-27 s",
+      "maxSec": 10.5,
+      "vo": "The buyer's hero number: how often this agency's sales beat their guide. Type the guide you were quoted, and see where it really sits.",
+      "caption": "Agency underquoting rate + your guide vs the value range = [[offer ceiling]]",
+      "action": "Scroll to Agency quoting accuracy card, then type \"$1.1m\" into the guide box; verdict appears."
+    },
+    {
+      "id": "p4-accuracy",
+      "window": "27-36 s",
+      "maxSec": 9.0,
+      "vo": "On {{heldOutN}} held-out listings, frozen before testing, the exact-home match was right {{exactPrecisionSpoken}} of the time, and every out-of-area listing was caught.",
+      "caption": "Held-out test: {{exactPrecision}} exact-match precision · {{outOfArea}} out-of-area caught",
+      "action": "Accuracy slide (rendered from numbers.json).",
+      "still": {
+        "name": "accuracy-pitch",
+        "heading": "Tested on [[{{heldOutN}} held-out listings]]",
+        "rows": [
+          [
+            "Exact-home precision",
+            "{{exactPrecision}}"
+          ],
+          [
+            "Exact listings matched",
+            "{{exactRate}}"
+          ],
+          [
+            "Out-of-area caught",
+            "{{outOfArea}}"
+          ],
+          [
+            "Wrong home returned",
+            "{{falseMatches}}"
+          ]
+        ],
+        "note": "Labels frozen before the run · eval/results.md"
+      }
+    },
+    {
+      "id": "p5-close",
+      "window": "36-43 s",
+      "maxSec": 6.0,
+      "vo": "Built on the Microburbs API, ready for any property extension. We're Groundtruth.",
+      "caption": "Built on the [[Microburbs API]] · team Groundtruth",
+      "action": "Back on the listing with the panel; end card follows."
+    }
+  ]
+}

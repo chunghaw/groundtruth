@@ -8,7 +8,7 @@
     "https://www.realestate.com.au/*",
     "https://www.domain.com.au/*",
     "http://localhost:3000/*",
-    "https://groundtruth-proxy.vercel.app/*"
+    "https://groundtruth-tawny-one.vercel.app/*"
   ],
   "background": { "service_worker": "background.js", "type": "module" },
   "content_scripts": [
