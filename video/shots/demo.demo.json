@@ -98,22 +98,7 @@
       ]
     },
     "d03-next-door": {
-      "setup": [
-        {
-          "do": "scrollPage",
-          "y": 0
-        },
-        {
-          "do": "selectPage",
-          "selector": ".demo-controls select",
-          "value": "{{P_HOUSE}}"
-        },
-        {
-          "do": "waitPanel",
-          "selector": ".pill.EXACT",
-          "timeout": 30000
-        }
-      ],
+      "setup": [],
       "show": [
         {
           "do": "scrollPanelTo",
@@ -123,20 +108,14 @@
         },
         {
           "do": "waitPanel",
-          "selector": "section.card.c3 .c3-lead",
-          "timeout": 20000,
+          "selector": "section.card.c3 .c3-legend .c3-ramp",
+          "timeout": 15000,
           "optional": true
         },
         {
           "do": "hoverPanel",
           "selector": "section.card.c3 .c3-stage",
           "at": 3.3,
-          "optional": true
-        },
-        {
-          "do": "clickPanel",
-          "selector": "section.card.c3 .c3-segs button.c3-seg",
-          "at": 7.3,
           "optional": true
         },
         {
@@ -172,7 +151,7 @@
         }
       ]
     },
-    "d05-domain-switch": {
+    "d05-listing-switch": {
       "setup": [
         {
           "do": "scrollPage",

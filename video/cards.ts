@@ -15,7 +15,7 @@ const dir = join(OUT_DIR, deck.deck, 'cards');
 mkdirSync(dir, { recursive: true });
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-const emph = (s: string) => esc(s).replace(/\[\[(.+?)\]\]/g, '<em>$1</em>');
+const emph = (s: string) => esc(s.replace(/G-NAF/g, 'G\u2011NAF')).replace(/\[\[(.+?)\]\]/g, '<em>$1</em>');
 
 const BASE_CSS = `
 :root { --ink:#14181d; --ink-2:#232a33; --paper:#f5f1e6; --accent:#ffc400; --harbour:#2c79b5; --good:#3fb07a; --bad:#e0484f;

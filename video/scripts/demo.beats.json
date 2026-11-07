@@ -10,9 +10,9 @@
       "id": "d01-rea-unit",
       "window": "0:03-0:14",
       "maxSec": 11,
-      "vo": "This is Groundtruth, a Chrome extension for home buyers. On a realestate.com.au unit listing, it reads only the address, never the listing, and proves which home it is.",
+      "vo": "This is Groundtruth, a Chrome extension for home buyers. Here it sits beside a real Surry Hills unit listing. It reads only the address, never the listing, and proves which home it is.",
       "caption": "[[Chrome extension]] · reads only the address, never the listing",
-      "action": "Real REA unit listing loads; panel slides in; Verified home strip turns green."
+      "action": "Listing page for 902/417-419 Bourke St (real data); panel slides in; Verified home strip turns green."
     },
     {
       "id": "d02-receipt",
@@ -39,12 +39,12 @@
       "action": "Scroll Risk overlays → Strata levy → Microburbs value; collapsed 'unavailable' line."
     },
     {
-      "id": "d05-domain-switch",
+      "id": "d05-listing-switch",
       "window": "0:55-1:06",
       "maxSec": 11,
-      "vo": "On Domain, listings change in place without a page load. Groundtruth notices, drops the stale answer, and the receipt updates to the new home.",
+      "vo": "Listing sites often swap listings in place, without a page load. Groundtruth notices, drops the stale answer, and the receipt updates to the new home.",
       "caption": "In-place listing switch: stale answer [[dropped]], receipt updates",
-      "action": "Domain listing → click a similar listing in place; receipt re-reads the new address."
+      "action": "In-page listing switch while a slow lookup is in flight; panel log shows the stale answer dropped; receipt shows the new address."
     },
     {
       "id": "d06-hidden-unit",
