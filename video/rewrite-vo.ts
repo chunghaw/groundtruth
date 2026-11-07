@@ -8,6 +8,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { REPO_DIR, VIDEO_DIR, loadEnvFile } from './lib/common.ts';
+import { numbersIn } from './lib/numbers.ts';
 
 const SYSTEM = "You rewrite voiceover lines for a 45-second hackathon pitch and a 3-minute product demo of Groundtruth, a Chrome extension for Sydney home buyers built on the Microburbs API. Make each line sound like a confident, warm founder talking naturally to judges: contractions, varied rhythm, plain words, a little energy, no hype words (revolutionary, game-changer), no clichés, no questions to the audience. Keep EVERY fact and number exactly (you may spell numbers as spoken words). Keep these terms when present: Chrome extension, address match, Microburbs API, buyer, G-NAF, realestate.com.au, Domain. Keep the line within ±10% of the original word count so the timing still fits. Return only the line.";
 const SKIP = new Set(['r07-briefing']);
@@ -16,41 +17,6 @@ const KEEP_TERMS = ['Chrome extension', 'address match', 'Microburbs API', 'buye
 const env = { ...loadEnvFile(join(REPO_DIR, 'proxy', '.env.local')), ...process.env };
 const apiKey = env.OPENAI_API_KEY;
 if (!apiKey) throw new Error('OPENAI_API_KEY missing (proxy/.env.local)');
-
-const ONES: Record<string, number> = { zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19 };
-const TENS: Record<string, number> = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
-const SCALES: Record<string, number> = { hundred: 100, thousand: 1000, million: 1e6 };
-
-/** Numeric values mentioned in a line, from digits ("3.9", "4/4") and spoken words ("eight hundred and thirty-two thousand"). */
-export function numbersIn(text: string): number[] {
-  const out: number[] = [];
-  const tokens = text.toLowerCase().replace(/(\d),(\d)/g, '$1$2').replace(/-/g, ' ').match(/\d+(?:\.\d+)?|[a-z]+|\//g) ?? [];
-  let cur: number | null = null, total = 0, frac: string | null = null;
-  const flush = () => {
-    if (cur !== null || total) out.push(total + (cur ?? 0) + (frac ? Number(`0.${frac}`) : 0));
-    cur = null; total = 0; frac = null;
-  };
-  for (let i = 0; i < tokens.length; i++) {
-    const t = tokens[i];
-    if (/^\d/.test(t)) { flush(); out.push(Number(t)); continue; }
-    if (t in ONES || t in TENS) {
-      if (frac !== null) { frac += String(ONES[t] ?? ''); continue; }
-      cur = (cur ?? 0) + (ONES[t] ?? TENS[t]);
-      continue;
-    }
-    if (t in SCALES && (cur !== null || total)) {
-      const s = SCALES[t];
-      if (s === 100) cur = (cur ?? 1) * 100; else { total += (cur ?? 1) * s; cur = null; }
-      continue;
-    }
-    if (t === 'and' && (cur !== null || total) && (tokens[i + 1] in ONES || tokens[i + 1] in TENS)) continue;
-    if (t === 'point' && cur !== null && tokens[i + 1] in ONES) { frac = ''; continue; }
-    if (t === 'a' && tokens[i + 1] in SCALES) { cur = 1; continue; }
-    flush();
-  }
-  flush();
-  return out.filter((n) => !Number.isNaN(n));
-}
 
 const words = (s: string) => s.trim().split(/\s+/).length;
 const key = (ns: number[]) => [...new Set(ns.map((n) => Math.round(n * 1000) / 1000))].sort((a, b) => a - b).join(',');

@@ -18,7 +18,7 @@ const apiKey = env('ELEVENLABS_API_KEY');
 const GEORGE_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb'; // ElevenLabs premade voice "George"
 const voiceId = env('ELEVENLABS_VOICE_ID') ?? (apiKey ? GEORGE_VOICE_ID : undefined);
 const modelId = env('ELEVENLABS_MODEL_ID') ?? 'eleven_multilingual_v2';
-const VOICE_SETTINGS = { stability: 0.4, similarity_boost: 0.8, style: 0.35, use_speaker_boost: true };
+const VOICE_SETTINGS = { stability: 0.4, similarity_boost: 0.8, style: 0.35, use_speaker_boost: true, ...(process.env.VO_SPEED ? { speed: Number(process.env.VO_SPEED) } : {}) };
 const engine: 'elevenlabs' | 'say' = !flag('say') && apiKey && voiceId ? 'elevenlabs' : 'say';
 const sayVoice = pickSayVoice();
 

@@ -5,42 +5,42 @@ Timings: measured voiceover (elevenlabs). Budget 45 s.
 
 **0:00.0 Title card** (0 s): Groundtruth · Chrome extension · built on the Microburbs API
 
-## 0:00.0–0:07.5 · r1-hook (planned 0-6 s, VO budget 7 s)
+## 0:00.0–0:05.9 · p1-hook (planned , VO budget 9 s)
 
-- **Voiceover:** Listings show you the house. Groundtruth confirms exactly which home it is, then reveals what it should actually sell for.
-- **On screen:** s1: panel open, 'What it should sell for: about $832k' vs Microburbs value $785k.
-- **Caption:** Groundtruth · a **Chrome extension** on a real realestate.com.au listing
+- **Voiceover:** Every listing tells the seller's story. Groundtruth tells the home's, right beside it, as a Chrome extension.
+- **On screen:** s1:price
+- **Caption:** Groundtruth · a **Chrome extension** beside the listing
 
-## 0:07.5–0:15.5 · r2-receipt (planned 6-14 s, VO budget 8 s)
+## 0:05.9–0:13.7 · p2-receipt (planned , VO budget 9 s)
 
-- **Voiceover:** It just reads the address. Click Verified home for the address match receipt—showing the exact G-NAF property, four checks complete.
-- **On screen:** s1: click Verified home, receipt expands.
-- **Caption:** **Address match** receipt · exact G-NAF home · 4/4 checks
+- **Voiceover:** It reads only the address, matches the exact G-NAF home, and shows the receipt. Thirty real listings, zero wrong homes.
+- **On screen:** s1:receipt
+- **Caption:** Verified home · 4/4 checks · **0 wrong homes** in 30 listings
 
-## 0:15.5–0:22.9 · r3-agency (planned 14-24 s, VO budget 9 s)
+## 0:13.7–0:23.3 · p3-money (planned , VO budget 9 s)
 
-- **Voiceover:** For the buyer: this agency tends to sell homes at three point nine percent above their guide, so consider the guide the minimum.
-- **On screen:** s1: agency quoting card.
-- **Caption:** This agency usually sells **3.9% over guide** (7 of 10 sales)
+- **Voiceover:** This agency usually sells three point nine percent over guide, so this one's heading for about eight hundred and thirty-two thousand, forty-six thousand above Microburbs' value.
+- **On screen:** s1:agency
+- **Caption:** Agency **+3.9% over guide** · likely ~$832k vs $785k value
 
-## 0:22.9–0:26.2 · r4-next-door (planned 24-32 s, VO budget 7 s)
+## 0:23.3–0:31.8 · p4-features (planned , VO budget 9 s)
 
-- **Voiceover:** It also shows what can legally be built next door.
-- **On screen:** s3d: real realestate.com.au panel, 902/417-419 Bourke St; slow push-in to the rendered 3D map.
-- **Caption:** What can **legally rise next door** — live on realestate.com.au
+- **Voiceover:** Street versus suburb growth. Heritage on the property. A high-voltage line thirty-five metres away. Things you'd only find after paying for searches.
+- **On screen:** feat:street
+- **Caption:** **Heritage on property** · HV line 35 m · street vs suburb
 
-## 0:26.2–0:30.2 · r5-accuracy (planned 32-39 s, VO budget 7 s)
+## 0:31.8–0:37.5 · p5-next-door (planned , VO budget 9 s)
 
-- **Voiceover:** On thirty held-out real listings: zero wrong homes.
-- **On screen:** Accuracy slide. _(slide: accuracy-pitch)_
-- **Caption:** 30 held-out real listings: **0 wrong homes** · 15 of 20 exact
+- **Voiceover:** And what can legally rise next door: two lots within a hundred metres could add four to five storeys.
+- **On screen:** s3d
+- **Caption:** 2 lots could rise **4–5 storeys** next door
 
-## 0:30.2–0:33.8 · r6-close (planned 39-45 s, VO budget 6 s)
+## 0:37.5–0:43.9 · p6-close (planned , VO budget 9 s)
 
-- **Voiceover:** Powered by the Microburbs API. This is Groundtruth.
-- **On screen:** s6: 902/417-419 Bourke St receipt on realestate.com.au.
-- **Caption:** Built on the **Microburbs API** · team Groundtruth
+- **Voiceover:** Works on realestate.com.au and Domain. Built on the Microburbs API. We're Groundtruth.
+- **On screen:** s7:domain
+- **Caption:** realestate.com.au + Domain · built on the **Microburbs API**
 
-**0:33.8 End card** (1.5 s): Groundtruth · Built on the Microburbs API · github.com/chunghaw/groundtruth
+**0:43.9 End card** (0.7 s): Groundtruth · Built on the Microburbs API · github.com/chunghaw/groundtruth
 
-**Total ≈ 0:35.3** (limit 0:45.0)
+**Total ≈ 0:44.6** (limit 0:45.0)

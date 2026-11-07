@@ -1,0 +1,155 @@
+{
+  "deck": "demo",
+  "title": "Groundtruth: demo",
+  "maxTotalSec": 180,
+  "titleSec": 2.5,
+  "endSec": 3,
+  "tailPadSec": 0.3,
+  "beats": [
+    {
+      "id": "r01-price",
+      "window": "",
+      "maxSec": 17,
+      "vo": "Here’s Groundtruth, our Chrome extension for home buyers, running on a realestate.com.au listing. It pulls just the address. Right up top, it shows what this place should actually sell for—around eight hundred thirty-two thousand—compared to the Microburbs value, seven eighty-five.",
+      "caption": "[[Chrome extension]] on realestate.com.au · what it should sell for vs Microburbs value",
+      "action": "s1 3–20: page load, panel, price check.",
+      "voText_orig": "This is Groundtruth, a Chrome extension for home buyers, on a real realestate.com.au listing. It reads only the address. Up top: what it should really sell for, about eight hundred and thirty-two thousand, against a Microburbs value of seven eighty-five."
+    },
+    {
+      "id": "r02-receipt",
+      "window": "",
+      "maxSec": 10,
+      "vo": "Click on Verified home and you’ll see the address match receipt: the address we grabbed, the exact G-NAF ID, and four out of four checks.",
+      "caption": "[[Address match]] receipt · address read · G-NAF id · 4/4 checks",
+      "action": "s1 24–35: receipt expands.",
+      "voText_orig": "Tap Verified home and the address match receipt opens: the address it read, the G-NAF ID of the exact home, and four of four checks."
+    },
+    {
+      "id": "r03-agency",
+      "window": "",
+      "maxSec": 10,
+      "vo": "From the Microburbs API: seven of this agency's last ten sales sold above their guide, typically by three point nine percent.",
+      "caption": "[[Microburbs API]]: 7 of 10 of this agency's sales sold above guide",
+      "action": "s1 36–46: agency quoting card.",
+      "voText_orig": "From the Microburbs API: seven of this agency's last ten sales sold above their guide, typically by three point nine percent."
+    },
+    {
+      "id": "r04-guide",
+      "window": "",
+      "maxSec": 12,
+      "vo": "The buyer can enter the guide they were given—say, nine hundred thousand. That’s different from what’s on record, and it’s fifteen percent higher than Microburbs’ estimate.",
+      "caption": "Your guide ($900k) vs record ($800k) · [[15% above]] Microburbs' estimate",
+      "action": "s1 85–98: typed $900k, guide check result.",
+      "voText_orig": "A buyer can type the guide they were quoted. Nine hundred thousand differs from the guide on record, and sits fifteen percent above Microburbs' estimate."
+    },
+    {
+      "id": "r05-switch",
+      "window": "",
+      "maxSec": 14,
+      "vo": "Realestate.com.au updates listings right on the page. Here’s Goulburn Street, priced around one point three million. Switch back to the results, choose Bourke Street, and the receipt refreshes for that property.",
+      "caption": "In-page listing switch · the receipt [[updates]] to the new home",
+      "action": "s6 14–39: Goulburn St → back → 902/417-419 Bourke St.",
+      "voText_orig": "Realestate.com.au swaps listings in place. Here's Goulburn Street, about one point three million. Back to the results, pick Bourke Street, and the receipt updates to the new home."
+    },
+    {
+      "id": "r06-domain",
+      "window": "",
+      "maxSec": 10,
+      "vo": "Domain works too: Cooper Street, Surry Hills, an exact address match. Now, the thirty-second briefing.",
+      "caption": "domain.com.au · 405/82-92 Cooper St · [[exact match]]",
+      "action": "s7 0–11: Domain listing with the panel.",
+      "voText_orig": "Domain works too: Cooper Street, Surry Hills, an exact address match. Now, the thirty-second briefing."
+    },
+    {
+      "id": "r07-briefing",
+      "window": "",
+      "maxSec": 28,
+      "vo": "(Recorded 30-second briefing for 405/82-92 Cooper St, ElevenLabs voice.)",
+      "audio": "out/real/brief-cooper.mp3",
+      "caption": "Real [[30-second briefing]] · captions in the panel",
+      "action": "s7 203–230: briefing plays, captions in the panel."
+    },
+    {
+      "id": "r08-next-door",
+      "window": "",
+      "maxSec": 15,
+      "vo": "Listings never tell you what could go up next door. The 3D view shows nearby lots at their legal planning height. In this spot, two lots within a hundred metres could add four or five storeys.",
+      "caption": "What can [[legally rise next door]] — live on realestate.com.au",
+      "action": "s3d: real realestate.com.au panel, 902/417-419 Bourke St; slow push-in to the rendered 3D map.",
+      "voText_orig": "What listings never show: what can legally rise next door. The 3D view raises nearby lots to their planning limits. Here, two lots within a hundred metres could rise four to five more storeys."
+    },
+    {
+      "id": "d06-hidden-unit",
+      "window": "",
+      "maxSec": 10,
+      "vo": "When a listing hides the unit number, Groundtruth won't guess. It asks the buyer how many bedrooms, and narrows the building.",
+      "caption": "Hidden unit: no guessing · tap [[bedrooms]] to narrow",
+      "action": "Demo page: 417-419 Bourke St, Building state, tap 2.",
+      "voText_orig": "When a listing hides the unit number, Groundtruth won't guess. It asks the buyer how many bedrooms, and narrows the building."
+    },
+    {
+      "id": "d07-out-of-area",
+      "window": "",
+      "maxSec": 7,
+      "vo": "Outside the City of Sydney pilot, like Bondi, it says so, and makes no data call.",
+      "caption": "Bondi: out of area · [[no data call]]",
+      "action": "Demo page: Bondi, Out of area.",
+      "voText_orig": "Outside the City of Sydney pilot, like Bondi, it says so, and makes no data call."
+    },
+    {
+      "id": "r11-accuracy",
+      "window": "",
+      "maxSec": 10,
+      "vo": "On thirty held-out real listings: zero wrong homes, fifteen of twenty matched exactly, and all four out-of-area listings caught.",
+      "caption": "30 held-out real listings · [[0 wrong homes]] · 15 of 20 exact · 4 of 4 out of area",
+      "action": "Accuracy slide.",
+      "still": {
+        "name": "accuracy-demo",
+        "heading": "[[Address match]] on 30 held-out real listings",
+        "rows": [
+          [
+            "Wrong homes returned",
+            "0"
+          ],
+          [
+            "Exact-home matches",
+            "15 of 20"
+          ],
+          [
+            "Out-of-area caught",
+            "4 of 4"
+          ]
+        ],
+        "note": "Labels frozen before the run · eval/FROZEN.md · eval/results.md"
+      },
+      "voText_orig": "On thirty held-out real listings: zero wrong homes, fifteen of twenty matched exactly, and all four out-of-area listings caught."
+    },
+    {
+      "id": "r12-limits",
+      "window": "",
+      "maxSec": 14,
+      "vo": "Limits. Agency data appears only while a home is listed with a tracked agency. The Microburbs value covers about thirteen percent of homes. And it's City of Sydney only, for now.",
+      "caption": "Limits, stated plainly",
+      "action": "Limits slide.",
+      "still": {
+        "name": "limits",
+        "heading": "Limits",
+        "bullets": [
+          "Agency data only while listed with a [[tracked agency]]",
+          "Microburbs value covers [[about 13%]] of homes",
+          "City of Sydney's 29 suburbs only, for now"
+        ]
+      },
+      "voText_orig": "Limits. Agency data appears only while a home is listed with a tracked agency. The Microburbs value covers about thirteen percent of homes. And it's City of Sydney only, for now."
+    },
+    {
+      "id": "r13-close",
+      "window": "",
+      "maxSec": 9,
+      "vo": "Groundtruth runs on the Microburbs API—address match, planning rules, valuations—all set to plug into any property extension.",
+      "caption": "Built on the [[Microburbs API]] · ready for any property extension",
+      "action": "s6: 902/417-419 Bourke St on realestate.com.au.",
+      "voText_orig": "Groundtruth. Built on the Microburbs API: address match, planning controls, valuations. Ready to drop into any property extension."
+    }
+  ]
+}

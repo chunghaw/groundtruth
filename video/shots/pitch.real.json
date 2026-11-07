@@ -1,33 +1,39 @@
 {
   "beats": {
-    "r1-hook": {
+    "p1-hook": {
       "file": "out/real/s1.mp4",
       "ss": 13,
-      "len": 7,
+      "len": 0,
       "crop": "1440:810:480:250"
     },
-    "r2-receipt": {
+    "p2-receipt": {
       "file": "out/real/s1.mp4",
       "ss": 25.5,
-      "len": 8.5,
+      "len": 0,
       "crop": "1440:810:480:250"
     },
-    "r3-agency": {
+    "p3-money": {
       "file": "out/real/s1.mp4",
-      "ss": 36.5,
-      "len": 8,
+      "ss": 37,
+      "len": 0,
       "crop": "1440:810:480:250"
     },
-    "r6-close": {
-      "file": "out/real/s6.mp4",
-      "ss": 35,
-      "len": 4,
-      "crop": "1600:900:320:172"
+    "p4-features": {
+      "file": "out/real/feat.mp4",
+      "ss": 19,
+      "len": 0,
+      "crop": "1440:810:480:250"
     },
-    "r4-next-door": {
-      "file": "out/real/s3d-pitch.mp4",
+    "p5-next-door": {
+      "file": "out/real/layers-push.mp4",
       "ss": 0,
-      "len": 6.5
+      "len": 0
+    },
+    "p6-close": {
+      "file": "out/real/s7.mp4",
+      "ss": 5,
+      "len": 0,
+      "crop": "1600:900:320:172"
     }
   }
 }

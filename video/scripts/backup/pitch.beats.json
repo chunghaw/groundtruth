@@ -1,0 +1,83 @@
+{
+  "deck": "pitch",
+  "title": "Groundtruth: 45-second pitch",
+  "maxTotalSec": 45,
+  "titleSec": 0,
+  "endSec": 1.5,
+  "tailPadSec": 0.2,
+  "beats": [
+    {
+      "id": "r1-hook",
+      "window": "0-6 s",
+      "maxSec": 7,
+      "vo": "Listings show you the house. Groundtruth confirms exactly which home it is, then reveals what it should actually sell for.",
+      "caption": "Groundtruth · a [[Chrome extension]] on a real realestate.com.au listing",
+      "action": "s1: panel open, 'What it should sell for: about $832k' vs Microburbs value $785k.",
+      "voText_orig": "Listings show you the house. Groundtruth proves which home it is, then tells you what it should really sell for."
+    },
+    {
+      "id": "r2-receipt",
+      "window": "6-14 s",
+      "maxSec": 8,
+      "vo": "It just reads the address. Click Verified home for the address match receipt—showing the exact G-NAF property, four checks complete.",
+      "caption": "[[Address match]] receipt · exact G-NAF home · 4/4 checks",
+      "action": "s1: click Verified home, receipt expands.",
+      "voText_orig": "It reads only the address. Tap Verified home: the address match receipt, the exact G-NAF home, four of four checks."
+    },
+    {
+      "id": "r3-agency",
+      "window": "14-24 s",
+      "maxSec": 9,
+      "vo": "For the buyer: this agency tends to sell homes at three point nine percent above their guide, so consider the guide the minimum.",
+      "caption": "This agency usually sells [[3.9% over guide]] (7 of 10 sales)",
+      "action": "s1: agency quoting card.",
+      "voText_orig": "For the buyer: this agency usually sells three point nine percent over its guide. So treat the guide as a floor."
+    },
+    {
+      "id": "r4-next-door",
+      "window": "24-32 s",
+      "maxSec": 7,
+      "vo": "It also shows what can legally be built next door.",
+      "caption": "What can [[legally rise next door]] — live on realestate.com.au",
+      "action": "s3d: real realestate.com.au panel, 902/417-419 Bourke St; slow push-in to the rendered 3D map.",
+      "voText_orig": "And it shows what can legally rise next door."
+    },
+    {
+      "id": "r5-accuracy",
+      "window": "32-39 s",
+      "maxSec": 7,
+      "vo": "On thirty held-out real listings: zero wrong homes.",
+      "caption": "30 held-out real listings: [[0 wrong homes]] · 15 of 20 exact",
+      "action": "Accuracy slide.",
+      "still": {
+        "name": "accuracy-pitch",
+        "heading": "[[30]] held-out real listings",
+        "rows": [
+          [
+            "Wrong homes returned",
+            "0"
+          ],
+          [
+            "Exact-home matches",
+            "15 of 20"
+          ],
+          [
+            "Out-of-area caught",
+            "4 of 4"
+          ]
+        ],
+        "note": "Labels frozen before the run · eval/results.md"
+      },
+      "voText_orig": "On thirty held-out real listings: zero wrong homes."
+    },
+    {
+      "id": "r6-close",
+      "window": "39-45 s",
+      "maxSec": 6,
+      "vo": "Powered by the Microburbs API. This is Groundtruth.",
+      "caption": "Built on the [[Microburbs API]] · team Groundtruth",
+      "action": "s6: 902/417-419 Bourke St receipt on realestate.com.au.",
+      "voText_orig": "Built on the Microburbs API. We're Groundtruth."
+    }
+  ]
+}
