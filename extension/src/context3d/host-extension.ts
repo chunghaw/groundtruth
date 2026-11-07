@@ -1,6 +1,6 @@
 /** Content-script host: data via the background worker, map inside an extension-page iframe. */
 import type { Context3D, Context3DHost, HeadroomInsight, LatLng, MapController, Overlay } from './types';
-import { isContext3D } from './types';
+import { isContext3D, MAP_FAIL_EVENT } from './types';
 
 const reducedMotion = (): boolean => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
 
@@ -33,7 +33,11 @@ export const extensionContext3DHost: Context3DHost = {
           const insight = (e.data as { insight?: HeadroomInsight | null }).insight ?? null;
           resolve({ ...ctl, insight });
         }
-        if (t === 'gt3d:error' && !settled) { settled = true; reject(new Error((e.data as { message?: string }).message ?? 'Map failed')); }
+        if (t === 'gt3d:error') {
+          const message = (e.data as { message?: string }).message ?? 'Map failed';
+          if (!settled) { settled = true; reject(new Error(message)); }
+          else stage.dispatchEvent(new CustomEvent(MAP_FAIL_EVENT, { detail: message }));
+        }
       };
       const ctl: MapController = {
         setOverlay(layer, on) { overlays[layer] = on; frame.contentWindow?.postMessage({ type: 'gt3d:overlay', layer, on }, target); },

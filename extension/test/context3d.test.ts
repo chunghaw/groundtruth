@@ -108,6 +108,18 @@ describe('context3dCard', () => {
     } finally { vi.useRealTimers(); }
   });
 
+  it('replaces a mounted map with the web-demo fallback when the frame reports a late error', async () => {
+    (globalThis as any).IntersectionObserver = undefined;
+    const { host, ctl } = fakeHost();
+    const el = context3dCard('GANSW1', host);
+    await flush();
+    const stage = el.querySelector('.c3-stage')!;
+    stage.dispatchEvent(new CustomEvent('gt3d-fail', { detail: 'WebGL lost' }));
+    expect(el.textContent).toContain('3D view unavailable on this page right now');
+    expect(el.querySelector('.c3-fallback a')?.getAttribute('href')).toBe('https://groundtruth-tawny-one.vercel.app/demo');
+    expect(ctl.destroy).toHaveBeenCalled();
+  });
+
   it('upgrades the caption to the headroom insight once the map reports it, and wires Reset view', async () => {
     (globalThis as any).IntersectionObserver = undefined;
     const resetView = vi.fn();

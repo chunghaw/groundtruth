@@ -30,4 +30,7 @@ window.addEventListener('message', (e: MessageEvent) => {
     else pending.push({ layer: m.layer, on: !!m.on });
   }
 });
+// Surface any uncaught failure (worker blocked, WebGL lost, CSP) so the card can show its fallback.
+window.addEventListener('error', (e) => reply({ type: 'gt3d:error', message: e.message || 'Map script error' }));
+window.addEventListener('unhandledrejection', (e) => reply({ type: 'gt3d:error', message: String((e.reason as Error)?.message ?? e.reason ?? 'Map error') }));
 reply({ type: 'gt3d:ready' });

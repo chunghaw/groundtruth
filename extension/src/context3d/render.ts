@@ -199,10 +199,14 @@ export async function renderMap(container: HTMLElement, data: Context3D, opts: R
   });
   let alive = true;
   let raf = 0;
+  // A map initialised while its frame/stage was hidden or 0x0 keeps a 0x0 canvas: resize once visible.
+  const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(() => { if (alive && container.clientWidth > 0 && container.clientHeight > 0) map.resize(); }) : null;
+  ro?.observe(container);
   await new Promise<void>((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('Map timed out loading')), 15_000);
     map.once('load', () => { clearTimeout(timer); resolve(); });
   });
+  map.resize();
   addLayers(map, data);
   if (tiles) {
     const credit = document.createElement('div');
@@ -265,7 +269,7 @@ export async function renderMap(container: HTMLElement, data: Context3D, opts: R
       if (opts.reducedMotion) map.jumpTo(home);
       else map.flyTo({ ...home, duration: 1400 });
     },
-    destroy() { alive = false; cancelAnimationFrame(raf); marker.remove(); map.remove(); },
+    destroy() { alive = false; ro?.disconnect(); cancelAnimationFrame(raf); marker.remove(); map.remove(); },
   };
 }
 

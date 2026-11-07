@@ -7,6 +7,12 @@
  */
 import { h } from '../content/dom';
 import type { Context3D, Context3DHost, HeadroomInsight, Highlight, LatLng, MapController, Overlay } from './types';
+import { MAP_FAIL_EVENT } from './types';
+
+export const WEB_DEMO_URL = 'https://groundtruth-tawny-one.vercel.app/demo';
+/** Replaces a blank or broken map so a viewer never sees an empty box. */
+const unavailableEl = () => h('div', { class: 'c3-fallback c3-timeout', role: 'status' },
+  h('span', {}, '3D view unavailable on this page right now · ', h('a', { href: WEB_DEMO_URL, target: '_blank', rel: 'noopener' }, 'open it on the web demo')));
 
 export const GHOST_RAMP_CSS = 'linear-gradient(90deg,#f7b84b,#f58a4b 40%,#e8505b)';
 
@@ -110,29 +116,32 @@ export function context3dCard(gnafId: string, host: Context3DHost, location: Lat
     else renderCaption(d, m.insight ?? null);
   };
 
+  const giveUp = (reason: string | null) => {
+    if (st.mapError) return;
+    st.mapError = reason ?? 'timeout';
+    tell(null);
+    st.map?.destroy();
+    st.map = null;
+    stage.classList.remove('loading');
+    stage.replaceChildren(unavailableEl());
+  };
+
   const startMap = (d: Context3D) => {
     if (st.map || !d.available) return;
     stage.classList.add('loading');
-    // No endless spinner: if the map hasn't rendered in time, say so (the caption above still stands).
-    const slow = h('div', { class: 'c3-fallback c3-timeout' }, '3D view unavailable on this page right now.');
-    const timer = setTimeout(() => {
-      if (st.map || st.mapError) return;
-      stage.classList.remove('loading');
-      stage.append(slow);
-    }, MAP_TIMEOUT_MS);
+    stage.addEventListener(MAP_FAIL_EVENT, (e) => giveUp(String((e as CustomEvent).detail ?? 'error')));
+    // No endless spinner or blank box: if the map hasn't rendered in time, swap the stage for a fallback.
+    const timer = setTimeout(() => { if (!st.map) giveUp(null); }, MAP_TIMEOUT_MS);
     host.mount(stage, d).then((m) => {
       clearTimeout(timer);
-      slow.remove();
+      if (st.mapError) { m.destroy(); return; }
       st.map = m;
       stage.classList.remove('loading');
       (Object.keys(st.overlays) as Overlay[]).forEach((k) => (k === 'headroom' ? !st.overlays[k] && m.setOverlay(k, false) : st.overlays[k] && m.setOverlay(k, true)));
       onMapReady(d, m);
     }).catch((e: Error) => {
       clearTimeout(timer);
-      st.mapError = e.message;
-      tell(null);
-      stage.classList.remove('loading');
-      stage.replaceChildren(h('div', { class: 'c3-fallback' }, '3D view unavailable here. ', e.message));
+      giveUp(e.message);
     });
   };
 
@@ -177,6 +186,7 @@ export const CONTEXT3D_CSS = /* css */ `
 @keyframes c3-sheen { to { background-position: -150% 0; } }
 @media (prefers-reduced-motion: reduce) { .c3 .c3-stage.loading::after { animation: none; } }
 .c3 .c3-fallback { padding: 16px; font-size: 12px; color: var(--ink-3); }
+.c3 .c3-fallback a { color: #1d5a8a; font-weight: 600; text-decoration: underline; }
 .c3 .c3-tools { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 10px; }
 .c3 .c3-segs { display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: rgba(14,23,38,.06); border: 1px solid var(--line); }
 .c3 .c3-seg { display: inline-flex; align-items: center; gap: 5px; border: 0; background: transparent; border-radius: 999px; padding: 5px 10px; white-space: nowrap; cursor: pointer; font: 600 11px/1.2 var(--sans); color: var(--ink-2); transition: background var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }

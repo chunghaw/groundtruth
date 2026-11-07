@@ -99,7 +99,12 @@ export class Panel {
     this.wrap.className = `gt${this.opts.container ? ' embedded' : ''}${this.collapsed ? ' collapsed' : ''}`;
     const tab = h('button', { class: 'tab', 'aria-expanded': String(!this.collapsed), 'aria-label': `Groundtruth: ${STATE_LABEL[state]}. ${this.collapsed ? 'Expand' : 'Collapse'} panel`, onClick: () => this.toggle() },
       h('span', { class: 'dot', style: `background:${DOT[state]}` }), 'Groundtruth');
-    const body = [this.briefing && this.briefingGnaf(view) ? this.briefing.captions() : null, ...this.bodyFor(view)].filter((x): x is HTMLElement => !!x);
+    const rawBody = [this.briefing && this.briefingGnaf(view) ? this.briefing.captions() : null, ...this.bodyFor(view)].filter((x): x is HTMLElement => !!x);
+    // Re-attaching an <iframe> reloads it, which wiped the live 3D map on every panel re-render.
+    // Keep the mounted 3D card in place: swap in a placeholder, then move it atomically below.
+    const live = this.c3?.el && this.c3.el.isConnected && rawBody.includes(this.c3.el) && canMoveBefore(this.wrap) ? this.c3.el : null;
+    const slot3d = live ? h('div', {}) : null;
+    const body = live && slot3d ? rawBody.map((el) => (el === live ? slot3d : el)) : rawBody;
     body.forEach((el, i) => { if (el.classList.contains('brief-cap')) return; el.classList.add('rise'); el.style.setProperty('--i', String(Math.min(i, 10))); });
     const sheet = h('aside', { class: 'sheet', 'aria-label': 'Groundtruth property facts' },
       h('header', { class: 'top' },
@@ -109,7 +114,13 @@ export class Panel {
         this.briefingButton(view),
         h('button', { class: 'icon-btn', 'aria-label': 'Collapse panel', title: 'Collapse to a slim tab', onClick: () => this.toggle() }, '⇥')),
       h('div', { class: 'body' }, ...body));
-    this.wrap.replaceChildren(tab, sheet);
+    if (live && slot3d) {
+      const old = [...this.wrap.childNodes];
+      this.wrap.append(tab, sheet);
+      (slot3d.parentNode as MoveBeforeNode).moveBefore(live, slot3d);
+      slot3d.remove();
+      old.forEach((n) => n.remove());
+    } else this.wrap.replaceChildren(tab, sheet);
   }
 
   /** The home a briefing can talk about: a result with facts loaded. */
@@ -353,3 +364,7 @@ export function sortByLevel(cands: readonly Candidate[], level: string): Candida
   const on = (c: Candidate) => { const u = unitNumber(c.label); return u !== null && u.length > level.length && u.startsWith(level) && u.length - level.length === 2; };
   return [...cands.filter(on), ...cands.filter((c) => !on(c))];
 }
+
+type MoveBeforeNode = ParentNode & { moveBefore(node: Node, child: Node | null): void };
+/** Chrome 133+: state-preserving DOM move (an iframe moved this way is not reloaded). */
+const canMoveBefore = (n: Node): boolean => typeof (n as Partial<MoveBeforeNode>).moveBefore === 'function';

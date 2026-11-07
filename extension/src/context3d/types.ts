@@ -87,3 +87,6 @@ export function isContext3D(x: unknown): x is Context3D {
   const o = x as Context3D | null;
   return !!o && typeof o === 'object' && typeof o.gnafId === 'string' && !!o.lots && Array.isArray(o.lots.features);
 }
+
+/** Dispatched on the card's stage by a host when an already-mounted map fails later. */
+export const MAP_FAIL_EVENT = 'gt3d-fail';
