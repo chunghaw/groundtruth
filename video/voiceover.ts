@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { CACHE_DIR, OUT_DIR, REPO_DIR, deckArg, flag, loadDeck, loadEnvFile } from './lib/common.ts';
+import { CACHE_DIR, OUT_DIR, REPO_DIR, VIDEO_DIR, deckArg, flag, loadDeck, loadEnvFile } from './lib/common.ts';
 
 const deck = loadDeck(deckArg());
 const fileEnv = loadEnvFile(join(REPO_DIR, 'proxy', '.env.local'));
@@ -65,6 +65,14 @@ const result: Record<string, { file: string; durationSec: number; text: string }
 let total = 0;
 for (const beat of deck.beats) {
   const text = beat.tts ?? beat.vo;
+  if (beat.audio) {
+    const file = join(VIDEO_DIR, beat.audio);
+    const durationSec = Math.round(durationOf(file) * 1000) / 1000;
+    total += durationSec + deck.tailPadSec;
+    console.log(`${beat.id.padEnd(16)} ${durationSec.toFixed(2)}s  (recorded audio)`);
+    result[beat.id] = { file, durationSec, text: '(recorded audio)' };
+    continue;
+  }
   const key = createHash('sha256').update([engine, voiceId ?? sayVoice ?? '', modelId, text].join('|')).digest('hex').slice(0, 16);
   const file = join(voDir, `${key}.${engine === 'elevenlabs' ? 'mp3' : 'aiff'}`);
   if (!existsSync(file) || flag('force')) {

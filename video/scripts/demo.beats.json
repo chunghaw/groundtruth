@@ -1,127 +1,143 @@
 {
   "deck": "demo",
-  "title": "Groundtruth: demo (≤ 2:50)",
-  "maxTotalSec": 170,
+  "title": "Groundtruth: demo",
+  "maxTotalSec": 180,
   "titleSec": 2.5,
   "endSec": 3.0,
-  "tailPadSec": 0.4,
+  "tailPadSec": 0.3,
   "beats": [
     {
-      "id": "d01-rea-unit",
-      "window": "0:03-0:14",
-      "maxSec": 11,
-      "vo": "This is Groundtruth, a Chrome extension for home buyers. Here it sits beside a real Surry Hills unit listing. It reads only the address, never the listing, and proves which home it is.",
-      "caption": "[[Chrome extension]] · reads only the address, never the listing",
-      "action": "Listing page for 902/417-419 Bourke St (real data); panel slides in; Verified home strip turns green."
+      "id": "r01-price",
+      "window": "",
+      "maxSec": 17,
+      "vo": "This is Groundtruth, a Chrome extension for home buyers, on a real realestate.com.au listing. It reads only the address. Up top: what it should really sell for, about eight hundred and thirty-two thousand, against a Microburbs value of seven eighty-five.",
+      "caption": "[[Chrome extension]] on realestate.com.au · what it should sell for vs Microburbs value",
+      "action": "s1 3–20: page load, panel, price check."
     },
     {
-      "id": "d02-receipt",
-      "window": "0:14-0:25",
-      "maxSec": 11,
-      "vo": "The Verified home strip opens into the address match receipt: what it read, the normalised address, the G-NAF ID, and four of four checks passed.",
-      "caption": "[[Address match]] receipt: read → normalised → G-NAF id · 4/4 checks",
-      "action": "Click the strip; receipt expands; cursor walks read / normalised / g-naf / checks."
+      "id": "r02-receipt",
+      "window": "",
+      "maxSec": 10,
+      "vo": "Tap Verified home and the address match receipt opens: the address it read, the G-NAF ID of the exact home, and four of four checks.",
+      "caption": "[[Address match]] receipt · address read · G-NAF id · 4/4 checks",
+      "action": "s1 24–35: receipt expands."
     },
     {
-      "id": "d03-next-door",
-      "window": "0:25-0:42",
-      "maxSec": 16,
-      "vo": "Second card, the one listings never show: what can legally rise next door. Today's buildings, with glass wherever planning rules allow two or more extra storeys. Here, {{nextDoorLotsSpoken}} lots within a hundred metres could rise {{nextDoorStoreysSpoken}} more.",
-      "caption": "What can [[legally rise next door]]: glass = planning headroom",
-      "action": "3D card in view; toggle a map layer; hover the headroom glass."
+      "id": "r03-agency",
+      "window": "",
+      "maxSec": 10,
+      "vo": "From the Microburbs API: seven of this agency's last ten sales sold above their guide, typically by three point nine percent.",
+      "caption": "[[Microburbs API]]: 7 of 10 of this agency's sales sold above guide",
+      "action": "s1 36–46: agency quoting card."
     },
     {
-      "id": "d04-facts",
-      "window": "0:42-0:55",
+      "id": "r04-guide",
+      "window": "",
       "maxSec": 12,
-      "vo": "Below that, Microburbs API data where it exists: risk overlays, strata levies, and the Microburbs value range. Anything unavailable collapses into one line.",
-      "caption": "[[Microburbs API]]: risks · strata · value, where available",
-      "action": "Scroll Risk overlays → Strata levy → Microburbs value; collapsed 'unavailable' line."
+      "vo": "A buyer can type the guide they were quoted. Nine hundred thousand differs from the guide on record, and sits fifteen percent above Microburbs' estimate.",
+      "caption": "Your guide ($900k) vs record ($800k) · [[15% above]] Microburbs' estimate",
+      "action": "s1 85–98: typed $900k, guide check result."
     },
     {
-      "id": "d05-listing-switch",
-      "window": "0:55-1:06",
-      "maxSec": 11,
-      "vo": "Listing sites often swap listings in place, without a page load. Groundtruth notices, drops the stale answer, and the receipt updates to the new home.",
-      "caption": "In-place listing switch: stale answer [[dropped]], receipt updates",
-      "action": "In-page listing switch while a slow lookup is in flight; panel log shows the stale answer dropped; receipt shows the new address."
+      "id": "r05-switch",
+      "window": "",
+      "maxSec": 14,
+      "vo": "Realestate.com.au swaps listings in place. Here's Goulburn Street, about one point three million. Back to the results, pick Bourke Street, and the receipt updates to the new home.",
+      "caption": "In-page listing switch · the receipt [[updates]] to the new home",
+      "action": "s6 14–39: Goulburn St → back → 902/417-419 Bourke St."
+    },
+    {
+      "id": "r06-domain",
+      "window": "",
+      "maxSec": 10,
+      "vo": "Domain works too: Cooper Street, Surry Hills, an exact address match. Now, the thirty-second briefing.",
+      "caption": "domain.com.au · 405/82-92 Cooper St · [[exact match]]",
+      "action": "s7 0–11: Domain listing with the panel."
+    },
+    {
+      "id": "r07-briefing",
+      "window": "",
+      "maxSec": 28,
+      "vo": "(Recorded 30-second briefing for 405/82-92 Cooper St, ElevenLabs voice.)",
+      "audio": "out/real/brief-cooper.mp3",
+      "caption": "Real [[30-second briefing]] · captions in the panel",
+      "action": "s7 203–230: briefing plays, captions in the panel."
+    },
+    {
+      "id": "r08-next-door",
+      "window": "",
+      "maxSec": 15,
+      "vo": "What listings never show: what can legally rise next door. The 3D view raises nearby lots to their planning limits. Here, two lots within a hundred metres could rise four to five more storeys.",
+      "caption": "What can [[legally rise next door]] — live on realestate.com.au",
+      "action": "s3d: real realestate.com.au panel, 902/417-419 Bourke St; slow push-in to the rendered 3D map."
     },
     {
       "id": "d06-hidden-unit",
-      "window": "1:06-1:18",
-      "maxSec": 12,
-      "vo": "Some listings hide the unit number. Groundtruth won't guess. It shows the building, asks how many bedrooms, and narrows the list when the buyer taps one.",
-      "caption": "Hidden unit: no guessing. Tap [[bedrooms]] to narrow the building",
-      "action": "417-419 Bourke St (Building state) → tap 2 → unit list narrows."
+      "window": "",
+      "maxSec": 10,
+      "vo": "When a listing hides the unit number, Groundtruth won't guess. It asks the buyer how many bedrooms, and narrows the building.",
+      "caption": "Hidden unit: no guessing · tap [[bedrooms]] to narrow",
+      "action": "Demo page: 417-419 Bourke St, Building state, tap 2."
     },
     {
       "id": "d07-out-of-area",
-      "window": "1:18-1:25",
+      "window": "",
       "maxSec": 7,
-      "vo": "In Bondi, outside the City of Sydney pilot, it says so plainly, and makes no data call at all.",
-      "caption": "Bondi: out of area, said plainly, [[no data call]]",
-      "action": "Bondi listing → grey Out of area state."
+      "vo": "Outside the City of Sydney pilot, like Bondi, it says so, and makes no data call.",
+      "caption": "Bondi: out of area · [[no data call]]",
+      "action": "Demo page: Bondi, Out of area."
     },
     {
-      "id": "d08-briefing",
-      "window": "1:25-1:33",
-      "maxSec": 8,
-      "vo": "At an inspection? Press play for a thirty-second spoken briefing of everything on the panel.",
-      "caption": "30-second spoken [[briefing]]",
-      "action": "Back on the EXACT home; press the briefing button; captions follow the audio."
-    },
-    {
-      "id": "d09-accuracy",
-      "window": "1:33-1:46",
-      "maxSec": 13,
-      "vo": "Does the address match hold up? We froze {{heldOutNSpoken}} real listings before testing. {{wrongHomesSpoken}} wrong homes. The exact home in {{exactRateSpoken}} of them, and {{outOfAreaSpoken}} out-of-area listing caught.",
-      "caption": "{{heldOutN}} held-out real listings: [[{{wrongHomes}} wrong homes]] · exact {{exactRate}}",
-      "action": "Accuracy table slide.",
+      "id": "r11-accuracy",
+      "window": "",
+      "maxSec": 10,
+      "vo": "On thirty held-out real listings: zero wrong homes, fifteen of twenty matched exactly, and all four out-of-area listings caught.",
+      "caption": "30 held-out real listings · [[0 wrong homes]] · 15 of 20 exact · 4 of 4 out of area",
+      "action": "Accuracy slide.",
       "still": {
         "name": "accuracy-demo",
-        "heading": "[[Address match]] on {{heldOutN}} held-out real listings",
+        "heading": "[[Address match]] on 30 held-out real listings",
         "rows": [
           [
             "Wrong homes returned",
-            "{{wrongHomes}}"
+            "0"
           ],
           [
-            "Exact-home rate",
-            "{{exactRate}}"
+            "Exact-home matches",
+            "15 of 20"
           ],
           [
             "Out-of-area caught",
-            "{{outOfArea}}"
+            "4 of 4"
           ]
         ],
         "note": "Labels frozen before the run · eval/FROZEN.md · eval/results.md"
       }
     },
     {
-      "id": "d10-limits",
-      "window": "1:46-2:00",
+      "id": "r12-limits",
+      "window": "",
       "maxSec": 14,
-      "vo": "Limits. Agency quoting data is rarely available, so we don't lean on it. The Microburbs value covers about thirteen percent of homes. Building heights from OpenStreetMap are estimates. And it's City of Sydney only, for now.",
+      "vo": "Limits. Agency data appears only while a home is listed with a tracked agency. The Microburbs value covers about thirteen percent of homes. And it's City of Sydney only, for now.",
       "caption": "Limits, stated plainly",
       "action": "Limits slide.",
       "still": {
         "name": "limits",
         "heading": "Limits",
         "bullets": [
-          "Agency quoting data is [[rarely available]]",
-          "Microburbs value covers [[{{avmCoverage}}]] of homes",
-          "Building heights from OpenStreetMap are [[estimates]]",
+          "Agency data only while listed with a [[tracked agency]]",
+          "Microburbs value covers [[about 13%]] of homes",
           "City of Sydney's 29 suburbs only, for now"
         ]
       }
     },
     {
-      "id": "d11-close",
-      "window": "2:00-2:08",
+      "id": "r13-close",
+      "window": "",
       "maxSec": 9,
-      "vo": "Groundtruth. Built on the Microburbs API: G-NAF matching, planning controls, valuations. Ready to drop into any property extension.",
+      "vo": "Groundtruth. Built on the Microburbs API: address match, planning controls, valuations. Ready to drop into any property extension.",
       "caption": "Built on the [[Microburbs API]] · ready for any property extension",
-      "action": "Panel on the first listing; end card follows."
+      "action": "s6: 902/417-419 Bourke St on realestate.com.au."
     }
   ]
 }

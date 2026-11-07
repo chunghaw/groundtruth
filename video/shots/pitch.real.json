@@ -1,0 +1,33 @@
+{
+  "beats": {
+    "r1-hook": {
+      "file": "out/real/s1.mp4",
+      "ss": 13,
+      "len": 7,
+      "crop": "1440:810:480:250"
+    },
+    "r2-receipt": {
+      "file": "out/real/s1.mp4",
+      "ss": 25.5,
+      "len": 8.5,
+      "crop": "1440:810:480:250"
+    },
+    "r3-agency": {
+      "file": "out/real/s1.mp4",
+      "ss": 36.5,
+      "len": 8,
+      "crop": "1440:810:480:250"
+    },
+    "r6-close": {
+      "file": "out/real/s6.mp4",
+      "ss": 35,
+      "len": 4,
+      "crop": "1600:900:320:172"
+    },
+    "r4-next-door": {
+      "file": "out/real/s3d-pitch.mp4",
+      "ss": 0,
+      "len": 6.5
+    }
+  }
+}

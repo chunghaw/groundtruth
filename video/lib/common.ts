@@ -26,6 +26,7 @@ export interface Beat {
   readonly caption: string;    // on-screen caption; [[word]] is highlighted
   readonly action: string;     // human description of what is on screen
   readonly still?: StillSpec;  // render a slide instead of a screen capture
+  readonly audio?: string;     // pre-recorded audio (path relative to video/) instead of TTS
 }
 
 export interface Deck {

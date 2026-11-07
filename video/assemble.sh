@@ -37,12 +37,13 @@ MAX_SEC="$(awk -F'\t' '$1=="#MAX"{print $2}' "$PLAN")"
 LIST="$WORK/list.txt"
 : > "$LIST"
 i=0
-while IFS=$'\t' read -r id kind src dur audio cap crop; do
+while IFS=$'\t' read -r id kind src dur audio cap crop ss; do
   [[ "$id" == "#MAX" ]] && continue
   i=$((i + 1))
   seg="$WORK/$(printf '%02d' "$i")-$id.mp4"
   inputs=()
-  if [[ "$kind" == "clip" ]]; then inputs+=(-f concat -safe 0 -i "$src"); else inputs+=(-loop 1 -framerate 30 -i "$src"); fi
+  if [[ "$kind" == "clip" && "$src" == *.mp4 ]]; then inputs+=(-ss "${ss:-0}" -i "$src");
+  elif [[ "$kind" == "clip" ]]; then inputs+=(-f concat -safe 0 -i "$src"); else inputs+=(-loop 1 -framerate 30 -i "$src"); fi
   if [[ "$audio" != "-" ]]; then inputs+=(-i "$audio"); else inputs+=(-f lavfi -i "anullsrc=r=48000:cl=stereo"); fi
 
   vf=""
