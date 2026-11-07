@@ -152,6 +152,7 @@ export function context3dCard(gnafId: string, host: Context3DHost, location: Lat
 export const CONTEXT3D_CSS = /* css */ `
 .c3 .c3-cap { display: grid; gap: 4px; margin: 6px 0 10px; min-height: 36px; }
 .c3 .c3-lead { font: 650 16px/1.25 var(--sans); letter-spacing: -.015em; color: var(--ink); text-wrap: balance; }
+.c3.lead-in-verdict .c3-lead { display: none; }
 .c3 .c3-detail { font: 12px/1.4 var(--sans); color: var(--ink-2); }
 .c3 .c3-mine { font: 12px/1.4 var(--sans); color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
 .c3 .c3-dot { width: 10px; height: 10px; border-radius: 3px; background: #1d5a8a; box-shadow: 0 0 0 2px rgba(44,121,181,.25); flex: none; display: inline-block; }

@@ -6,7 +6,7 @@ import { PANEL_CSS } from './styles';
 import { BriefingControl, BRIEFING_CSS, type BriefingDeps } from './briefing';
 import { OFFER_CSS } from './offerCard';
 import { context3dCard, CONTEXT3D_CSS } from '../context3d/card';
-import { factsVerdict, quotingVerdict, verdictEl, type Verdict } from './verdict';
+import { factsVerdict, headroomVerdict, quotingVerdict, verdictEl, type Verdict } from './verdict';
 import type { Context3DHost, HeadroomInsight } from '../context3d/types';
 
 /** How long the verdict waits for the 3D headroom finding before settling on the next fallback. */
@@ -245,6 +245,8 @@ export class Panel {
     if (v?.kind !== 'result' || !v.facts || !this.verdictSlot?.isConnected) return;
     if (quotingVerdict(v.facts)) return;
     this.verdictSlot.replaceChildren(verdictEl(factsVerdict(v.facts, insight)));
+    // The verdict now carries the headroom line, so the 3D card drops its own copy of it.
+    this.c3.el.classList.toggle('lead-in-verdict', !!headroomVerdict(insight));
   }
 
   private buildingBlock(v: Extract<PanelView, { kind: 'result' }>): HTMLElement {
