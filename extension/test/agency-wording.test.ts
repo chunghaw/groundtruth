@@ -66,9 +66,9 @@ describe('priceEstimate', () => {
     expect(priceEstimate(facts(null, { predicted_price: 900_000, predicted_price_low: 800_000, predicted_price_high: 1_000_000 })))
       .toEqual({ price: 900_000, label: 'Microburbs estimate', range: { low: 800_000, high: 1_000_000 } });
   });
-  it('then the buyer-typed guide × (1 + median deviation)', () => {
+  it('then the recorded asking price × (1 + median deviation), never the typed guide', () => {
     const { likely_sale_price: _, ...noLikely } = belvoir;
-    expect(priceEstimate(facts(noLikely), '$800k')?.price).toBe(831_200);
+    expect(priceEstimate(facts({ ...noLikely, asking_price: 800_000 }))?.price).toBe(831_200);
   });
   it('is null when nothing is known', () => {
     expect(priceEstimate(facts(null))).toBeNull();

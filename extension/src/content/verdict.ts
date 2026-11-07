@@ -1,6 +1,6 @@
 import type { FactsResponse } from '../api-types';
 import { h } from './dom';
-import { money, parseGuidePrice, pct, pickNumber, pickString } from './format';
+import { money, pct, pickNumber, pickString } from './format';
 import type { HeadroomInsight } from '../context3d/types';
 
 export type Tone = 'ok' | 'warn' | 'bad' | 'info' | 'neutral';
@@ -56,8 +56,8 @@ export function priceWorking(q: unknown): string | null {
   return `This home’s guide ${money(ask)} + this agency’s typical ${sign}${fmtPct(dev)}%${median}`;
 }
 
-/** Headline price: agency likely sale price → Microburbs AVM → buyer's guide × (1 + agency median deviation). */
-export function priceEstimate(facts: FactsResponse | null, guideInput = ''): PriceEstimate | null {
+/** Headline price: agency likely sale price → Microburbs AVM → recorded guide × (1 + agency median deviation). Never the typed guide. */
+export function priceEstimate(facts: FactsResponse | null): PriceEstimate | null {
   const aq = facts?.facts.agentQuoting;
   const q = aq?.available ? aq.data : null;
   const likely = pickNumber(q, ['likely_sale_price']);
@@ -73,10 +73,11 @@ export function priceEstimate(facts: FactsResponse | null, guideInput = ''): Pri
     const high = pickNumber(a, ['predicted_price_high', 'high', 'upper']);
     return { price: mid, label: 'Microburbs estimate', range: low !== null && high !== null && high > low ? { low, high } : null };
   }
-  const guide = parseGuidePrice(guideInput);
+  const ask = pickNumber(q, ['asking_price']);
   const dev = pickNumber(q, ['median_deviation_pct', 'avg_gap_pct']);
-  if (guide !== null && dev !== null) {
-    return { price: Math.round(guide * (1 + dev / 100)), label: `Your guide adjusted by this agency’s typical ${dev >= 0 ? '+' : '−'}${fmtPct(dev)}%`, range: null };
+  if (ask !== null && ask > 0 && dev !== null) {
+    const working = priceWorking(q);
+    return { price: Math.round(ask * (1 + dev / 100)), label: 'Based on this agency’s guide-vs-sold record', range: null, ...(working ? { working } : {}) };
   }
   return null;
 }

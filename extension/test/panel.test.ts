@@ -42,7 +42,7 @@ describe('Panel', () => {
     expect(t).toContain('$1m');
     expect(t).toContain('no street row');
     const titles = [...q(p, '.card h3')].map((e) => e.textContent);
-    expect(titles.slice(0, 3)).toEqual(['Agency quoting accuracy', 'Realistic budget', 'Microburbs value']);
+    expect(titles.slice(0, 3)).toEqual(['Agency quoting accuracy', 'Check a guide you were given', 'Microburbs value']);
     expect(titles.indexOf('Street vs suburb')).toBe(-1); // unavailable: no card, just the quiet line
     expect(q(p, 'details.na-line summary')[0].textContent).toContain('Not available for this home: street profile');
     p.render({ kind: 'result', ex, resolve: resolve('EXACT'), bedrooms: null, facts: { gnafId: 'G', facts: {
@@ -71,7 +71,7 @@ describe('Panel', () => {
       risks: { available: true, data: {} },
     } } });
     const order = [...q(p, '.body > *')].map((e) => e.getAttribute('aria-label') ?? e.className.split(' ')[0]);
-    expect(order.slice(0, 5)).toEqual(['price-block', 'verdict-slot', 'Match receipt', 'What can rise next door', 'Realistic budget']);
+    expect(order.slice(0, 5)).toEqual(['price-block', 'verdict-slot', 'Match receipt', 'What can rise next door', 'Check a guide you were given']);
     expect(q(p, '.verdict-slot .verdict.pending').length).toBe(1);
     await vi.waitFor(() => expect(host.mount).toHaveBeenCalled());
     const slot = q(p, '.verdict-slot')[0];

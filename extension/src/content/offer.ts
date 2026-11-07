@@ -1,6 +1,6 @@
 /**
- * Offer ceiling: turns a guide price the BUYER typed into a realistic budget, using the agency's
- * guide-vs-sold track record, cross-checked against the Microburbs AVM range. Pure, no DOM.
+ * Guide check: compares a guide price the BUYER typed with Microburbs' recorded guide and AVM,
+ * and projects it with the agency's guide-vs-sold record. Pure, no DOM.
  */
 import type { Fact } from '../api-types';
 import { money, pickNumber } from './format';
@@ -13,26 +13,37 @@ export interface QuotingInput {
   readonly underquoteRate: number | null;
   readonly nSales: number | null;
 }
-export interface OfferInput { readonly avm: AvmInput | null; readonly quoting: QuotingInput | null; readonly guide: number | null }
-
-export type OfferVerdict = 'believable' | 'low' | 'above' | 'none' | 'unknown';
-export interface OfferResult {
-  readonly verdict: OfferVerdict;
-  readonly label: string;
-  /** Expected sale price / realistic budget, or null when there is nothing to go on. */
-  readonly budget: number | null;
-  /** Whole-percent uplift the buyer should expect over the guide ('low' verdicts). */
-  readonly upliftPct: number;
-  /** One-line explanation of the maths. */
-  readonly maths: string;
+export interface GuideCheckInput {
+  readonly avm: AvmInput | null;
+  readonly quoting: QuotingInput | null;
+  /** Microburbs' recorded guide for this listing (agent-quoting asking_price). */
+  readonly asking: number | null;
+  /** The guide the BUYER typed. */
+  readonly guide: number | null;
+}
+export type Tone = 'ok' | 'warn' | 'bad' | 'none';
+export interface Line { readonly tone: Tone; readonly text: string }
+export interface GuideCheck {
+  /** The first verdict that applies. */
+  readonly headline: Line;
+  /** Sub-line under the headline (record mismatch explanation). */
+  readonly detail: string | null;
+  /** The AVM comparison, when the headline is something else. */
+  readonly second: Line | null;
+  /** "Microburbs estimate $785k (likely range $612k–$958k)". */
+  readonly evidence: string | null;
+  /** "If this agency runs true to form (...), expect about $935k." */
+  readonly projection: string | null;
 }
 
-/** Agency deviation at or above this (percent) means "guide likely low". */
-export const LOW_GUIDE_PCT = 5;
+/** Typed guide more than this far (fraction) from the recorded guide is flagged. */
+export const RECORD_TOLERANCE = 0.05;
+/** Within this fraction of the AVM point estimate counts as "in line". */
+export const IN_LINE_TOLERANCE = 0.07;
 /** Fewer tracked sales than this and we ignore the agency record. */
 export const MIN_AGENCY_SALES = 3;
 
-const signed = (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n)}%`;
+const valid = (n: number | null): n is number => n !== null && Number.isFinite(n) && n > 0;
 
 function usableQuoting(q: QuotingInput | null): QuotingInput | null {
   if (!q || !Number.isFinite(q.medianDeviationPct)) return null;
@@ -40,42 +51,47 @@ function usableQuoting(q: QuotingInput | null): QuotingInput | null {
   return q;
 }
 
-function rangeNote(avm: AvmInput | null): string {
-  return avm ? ` Microburbs 80% range ${money(avm.low)}–${money(avm.high)}.` : '';
+function avmVerdict(guide: number, avm: AvmInput): Line {
+  if (guide > avm.high) return { tone: 'bad', text: 'Well above Microburbs’ estimate' };
+  if (guide < avm.low) return { tone: 'warn', text: 'Below Microburbs’ estimate — likely to sell higher' };
+  const gap = (guide - avm.predicted) / avm.predicted;
+  if (Math.abs(gap) <= IN_LINE_TOLERANCE) return { tone: 'ok', text: 'In line with Microburbs’ estimate' };
+  return { tone: 'warn', text: `Inside the range, but ${Math.round(Math.abs(gap) * 100)}% ${gap > 0 ? 'above' : 'below'} Microburbs’ estimate of ${money(avm.predicted)}` };
 }
 
-export function offerCeiling(input: OfferInput): OfferResult {
-  const { avm, guide } = input;
-  const quoting = usableQuoting(input.quoting);
-  if (guide === null || !Number.isFinite(guide) || guide <= 0) {
+function projection(guide: number, q: QuotingInput | null): string | null {
+  if (!q) return null;
+  const dev = q.medianDeviationPct;
+  const sign = dev > 0 ? '+' : dev < 0 ? '−' : '';
+  const over = q.nSales !== null ? ` over ${Math.round(q.nSales)} sales` : '';
+  return `If this agency runs true to form (${sign}${Math.abs(dev)}% median${over}), expect about ${money(Math.round(guide * (1 + dev / 100)))}.`;
+}
+
+export function checkGuide(input: GuideCheckInput): GuideCheck {
+  const { avm, asking, guide } = input;
+  const evidence = avm ? `Microburbs estimate ${money(avm.predicted)} (likely range ${money(avm.low)}–${money(avm.high)})` : null;
+  if (!valid(guide)) {
+    return { headline: { tone: 'none', text: 'Type the guide to check it' }, detail: null, second: null, evidence, projection: null };
+  }
+  const proj = projection(guide, usableQuoting(input.quoting));
+  const avmLineV = avm ? avmVerdict(guide, avm) : null;
+  if (valid(asking) && Math.abs(guide - asking) / asking > RECORD_TOLERANCE) {
     return {
-      verdict: 'none', label: 'Type the guide to check it', budget: avm?.predicted ?? null, upliftPct: 0,
-      maths: avm ? `Until you type a guide, the Microburbs estimate is ${money(avm.predicted)}.${rangeNote(avm)}` : 'Type the guide you were quoted to see a realistic budget.',
+      headline: { tone: 'warn', text: `Differs from the guide on record (${money(asking)})` },
+      detail: `Microburbs’ listing record shows ${money(asking)} for this home. Check which figure is current.`,
+      second: avmLineV, evidence, projection: proj,
     };
   }
-  if (!avm && !quoting) {
-    return { verdict: 'unknown', label: 'Not enough data to check this guide', budget: null, upliftPct: 0, maths: 'No Microburbs value or agency track record for this home.' };
-  }
+  if (avmLineV) return { headline: avmLineV, detail: null, second: null, evidence, projection: proj };
+  return { headline: { tone: 'none', text: 'No Microburbs estimate to compare with' }, detail: null, second: null, evidence: null, projection: proj };
+}
 
-  const dev = quoting?.medianDeviationPct ?? 0;
-  const agentExpected = quoting ? Math.round(guide * (1 + dev / 100)) : null;
-  const budget = agentExpected ?? Math.max(guide, avm!.predicted);
-  const avmGapPct = avm && guide < avm.low ? ((avm.predicted - guide) / guide) * 100 : 0;
-
-  const maths = quoting
-    ? `${money(guide)} guide × (1 + ${dev}% median agency gap over ${quoting.nSales ?? '?'} sales) ≈ ${money(agentExpected)}.${rangeNote(avm)}`
-    : `No agency track record — compared your ${money(guide)} guide with the Microburbs estimate ${money(avm!.predicted)}.${rangeNote(avm)}`;
-
-  const tooHigh = avm ? guide > avm.high : dev <= -LOW_GUIDE_PCT;
-  if (tooHigh) {
-    return { verdict: 'above', label: avm ? 'Guide above our range' : 'Guide above what this agency usually gets', budget, upliftPct: 0, maths };
-  }
-  const uplift = Math.max(quoting && dev >= LOW_GUIDE_PCT ? dev : 0, avmGapPct);
-  if (uplift > 0) {
-    const x = Math.round(uplift);
-    return { verdict: 'low', label: `Guide likely low — expect ~${signed(x)}`, budget, upliftPct: x, maths };
-  }
-  return { verdict: 'believable', label: 'Guide looks believable', budget, upliftPct: 0, maths };
+/** Value-card line: "Your $900k is 15% above the estimate, inside the likely range". */
+export function avmLine(guide: number, rng: { readonly low: number; readonly mid: number; readonly high: number }): string {
+  const gap = (guide - rng.mid) / rng.mid;
+  const where = guide > rng.high ? 'above' : guide < rng.low ? 'below' : 'inside';
+  const vs = Math.abs(gap) <= IN_LINE_TOLERANCE ? 'in line with the estimate' : `${Math.round(Math.abs(gap) * 100)}% ${gap > 0 ? 'above' : 'below'} the estimate`;
+  return `Your ${money(guide)} is ${vs}, ${where} the likely range`;
 }
 
 export function quotingFromFact(fact: Fact | undefined): QuotingInput | null {

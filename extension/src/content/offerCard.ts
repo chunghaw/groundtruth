@@ -1,7 +1,7 @@
 import type { Fact } from '../api-types';
 import { h } from './dom';
-import { money, parseGuidePrice } from './format';
-import { avmFromFact, offerCeiling, quotingFromFact, type OfferResult } from './offer';
+import { parseGuidePrice, pickNumber } from './format';
+import { avmFromFact, checkGuide, quotingFromFact, type GuideCheck, type Line } from './offer';
 
 /** The one guide input is shared: cards that react to it register a listener here. */
 export interface GuideBus {
@@ -9,13 +9,17 @@ export interface GuideBus {
   readonly listeners: Array<() => void>;
 }
 
-const TITLE = 'Realistic budget';
+const TITLE = 'Check a guide you were given';
 
-function paint(slot: HTMLElement, r: OfferResult): void {
+const pill = (l: Line) => h('div', { class: `offer-pill ${l.tone}`, role: 'status' }, l.text);
+
+function paint(slot: HTMLElement, r: GuideCheck): void {
   const parts = [
-    h('div', { class: `offer-pill ${r.verdict}`, role: 'status' }, r.label),
-    r.budget !== null ? h('div', { class: 'big' }, money(r.budget)) : null,
-    h('div', { class: 'offer-maths' }, r.maths),
+    r.headline.tone === 'none' && r.headline.text.startsWith('Type') ? h('div', { class: 'offer-maths' }, r.headline.text) : pill(r.headline),
+    r.detail ? h('div', { class: 'offer-detail' }, r.detail) : null,
+    r.second ? pill(r.second) : null,
+    r.evidence ? h('div', { class: 'offer-maths' }, r.evidence) : null,
+    r.projection ? h('div', { class: 'offer-note' }, r.projection) : null,
   ].filter((x): x is HTMLDivElement => x !== null);
   slot.replaceChildren(...parts);
 }
@@ -28,7 +32,8 @@ export function offerCeilingCard(avmFact: Fact | undefined, quotingFact: Fact | 
       h('div', { class: 'big' }, 'Not enough data: no Microburbs value or agency track record for this home.'));
   }
   const slot = h('div', { 'aria-live': 'polite' });
-  const update = () => paint(slot, offerCeiling({ avm, quoting, guide: parseGuidePrice(bus.state.value) }));
+  const asking = quotingFact?.available ? pickNumber(quotingFact.data, ['asking_price']) : null;
+  const update = () => paint(slot, checkGuide({ avm, quoting, asking, guide: parseGuidePrice(bus.state.value) }));
   const input = h('input', {
     id: 'gt-guide', type: 'text', inputmode: 'decimal', autocomplete: 'off', placeholder: 'e.g. $1.1m or 1.05m – 1.15m', value: bus.state.value,
     onInput: (e: Event) => { bus.state.value = (e.target as HTMLInputElement).value; bus.listeners.forEach((fn) => fn()); },
@@ -37,7 +42,7 @@ export function offerCeilingCard(avmFact: Fact | undefined, quotingFact: Fact | 
   update();
   return h('section', { class: 'card offer', 'aria-label': TITLE },
     h('h3', {}, TITLE),
-    h('label', { class: 'sub', for: 'gt-guide' }, 'Guide price you were given (typed by you, never read from the page):'),
+    h('label', { class: 'sub', for: 'gt-guide' }, 'Guide the agent told you (typed by you — we never read prices from the listing)'),
     h('div', { class: 'guide-row' }, input),
     slot);
 }
@@ -47,9 +52,12 @@ export const OFFER_CSS = /* css */ `
 .card.offer label.sub { display: block; }
 .offer-pill { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 6px 10px; border-radius: 999px; font: 650 11.5px/1.2 var(--sans); background: var(--grey-wash); color: var(--grey); }
 .offer-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.offer-pill.believable { background: var(--ok-wash); color: var(--ok); }
-.offer-pill.low { background: var(--bad-wash); color: var(--bad); }
-.offer-pill.above { background: var(--warn-wash); color: var(--warn); }
+.offer-pill.ok { background: var(--ok-wash); color: var(--ok); }
+.offer-pill.bad { background: var(--bad-wash); color: var(--bad); }
+.offer-pill.warn { background: var(--warn-wash); color: var(--warn); }
+.offer-pill + .offer-pill { margin-top: 6px; display: flex; width: fit-content; }
+.offer-detail { margin-top: 6px; font: 12px/1.45 var(--sans); color: var(--ink-2); }
+.offer-note { margin-top: 6px; font: 11.5px/1.45 var(--sans); color: var(--ink-3); font-style: italic; }
 .card.offer .big { margin-top: 8px; }
 .offer-maths { margin-top: 6px; font: 11px/1.5 var(--mono); color: var(--ink-3); }
 `;

@@ -2,6 +2,7 @@ import type { Fact, FactsResponse } from '../api-types';
 import { h } from './dom';
 import { compareGuide, money, parseGuidePrice, pct, pickNumber, pickString, type AvmRange } from './format';
 import { offerCeilingCard, type GuideBus } from './offerCard';
+import { avmLine } from './offer';
 import { fmtPct, salesAboveGuide } from './verdict';
 
 const UNDERQUOTE_ALERT = 0.4; // 40%+ of the agency's recent sales went above guide
@@ -142,7 +143,7 @@ function rangeBar(rng: AvmRange, guide: number | null): HTMLElement {
     guide !== null ? h('div', { class: 'guide', style: `left:${pos(guide)}` }) : null);
 }
 
-/** With `listeners`, the guide input lives in the Realistic budget card and this card only reacts to it. */
+/** With `listeners`, the guide input lives in the guide-check card and this card only reacts to it. */
 export function avmCard(fact: Fact | undefined, guideState: { value: string }, listeners?: Array<() => void>): HTMLElement {
   return card('Microburbs value', fact, (d) => {
     const rng = avmRange(d);
@@ -154,11 +155,8 @@ export function avmCard(fact: Fact | undefined, guideState: { value: string }, l
       const g = parseGuidePrice(guideState.value);
       barSlot.replaceChildren(rangeBar(rng, g));
       if (g === null) { verdict.className = 'guide-verdict'; verdict.textContent = ''; return; }
-      const c = compareGuide(g, rng);
-      verdict.className = `guide-verdict ${c.position}`;
-      verdict.textContent = c.position === 'below'
-        ? `Guide ${money(g)} is below the 80% range: ${Math.abs(Math.round(c.gapPct))}% under the estimate.`
-        : c.position === 'above' ? `Guide ${money(g)} is above the 80% range.` : `Guide ${money(g)} sits inside the range.`;
+      verdict.className = `guide-verdict ${compareGuide(g, rng).position}`;
+      verdict.textContent = avmLine(g, rng);
     };
     const input = h('input', { type: 'text', inputmode: 'decimal', placeholder: 'e.g. $1.1m', 'aria-label': 'Guide price you were quoted', value: guideState.value,
       onInput: (e: Event) => { guideState.value = (e.target as HTMLInputElement).value; update(); } });

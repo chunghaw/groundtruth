@@ -1,62 +1,58 @@
-import { offerCeiling, quotingFromFact, avmFromFact } from '../src/content/offer';
+import { checkGuide, avmLine, quotingFromFact, avmFromFact } from '../src/content/offer';
 
-const avm = { predicted: 1_000_000, low: 900_000, high: 1_100_000, confidence: 0.8 };
-const quoting = { medianDeviationPct: 6.5, underquoteRate: 0.4, nSales: 12 };
+// 313/6 Belvoir St: recorded guide $800k, AVM $785k (80% range $612k–$958k), agency +3.9% over 10 sales.
+const avm = { predicted: 785_000, low: 612_000, high: 958_000, confidence: null };
+const quoting = { medianDeviationPct: 3.9, underquoteRate: 0.6, nSales: 10 };
 
-describe('offerCeiling', () => {
-  it('scales the typed guide by the agency median deviation and calls it low', () => {
-    const r = offerCeiling({ avm, quoting, guide: 950_000 });
-    expect(r.verdict).toBe('low');
-    expect(r.budget).toBe(1_011_750);
-    expect(r.upliftPct).toBe(7);
-    expect(r.label).toBe('Guide likely low — expect ~+7%');
-    expect(r.maths).toContain('× (1 + 6.5%');
-    expect(r.maths).toContain('80% range');
+describe('checkGuide', () => {
+  it('flags a typed guide that differs >5% from the recorded guide, with the AVM comparison second', () => {
+    const r = checkGuide({ avm, quoting, asking: 800_000, guide: 900_000 });
+    expect(r.headline).toEqual({ tone: 'warn', text: 'Differs from the guide on record ($800k)' });
+    expect(r.detail).toBe('Microburbs’ listing record shows $800k for this home. Check which figure is current.');
+    expect(r.second).toEqual({ tone: 'warn', text: 'Inside the range, but 15% above Microburbs’ estimate of $785k' });
+    expect(r.evidence).toBe('Microburbs estimate $785k (likely range $612k–$958k)');
+    expect(r.projection).toBe('If this agency runs true to form (+3.9% median over 10 sales), expect about $935k.');
   });
 
-  it('calls a guide believable when the agency quotes honestly and it sits in range', () => {
-    const r = offerCeiling({ avm, quoting: { medianDeviationPct: 1.2, underquoteRate: 0.1, nSales: 20 }, guide: 1_000_000 });
-    expect(r.verdict).toBe('believable');
-    expect(r.label).toBe('Guide looks believable');
-    expect(r.budget).toBe(1_012_000);
+  it('skips the record check within 5% and compares with the AVM', () => {
+    const r = checkGuide({ avm, quoting, asking: 800_000, guide: 820_000 });
+    expect(r.headline).toEqual({ tone: 'ok', text: 'In line with Microburbs’ estimate' });
+    expect(r.second).toBeNull();
+    expect(r.detail).toBeNull();
   });
 
-  it('flags a guide above the AVM range', () => {
-    const r = offerCeiling({ avm, quoting: { medianDeviationPct: 0, underquoteRate: 0, nSales: 9 }, guide: 1_200_000 });
-    expect(r.verdict).toBe('above');
-    expect(r.label).toBe('Guide above our range');
+  it('red above the range, amber below it, amber inside-but-off', () => {
+    expect(checkGuide({ avm, quoting: null, asking: null, guide: 1_100_000 }).headline)
+      .toEqual({ tone: 'bad', text: 'Well above Microburbs’ estimate' });
+    expect(checkGuide({ avm, quoting: null, asking: null, guide: 550_000 }).headline)
+      .toEqual({ tone: 'warn', text: 'Below Microburbs’ estimate — likely to sell higher' });
+    expect(checkGuide({ avm, quoting: null, asking: null, guide: 680_000 }).headline)
+      .toEqual({ tone: 'warn', text: 'Inside the range, but 13% below Microburbs’ estimate of $785k' });
+    expect(checkGuide({ avm, quoting: null, asking: null, guide: 835_000 }).headline.tone).toBe('ok'); // +6.4%
   });
 
-  it('says low when the guide is under the AVM range even if the agency is honest', () => {
-    const r = offerCeiling({ avm, quoting: { medianDeviationPct: 0, underquoteRate: 0, nSales: 9 }, guide: 800_000 });
-    expect(r.verdict).toBe('low');
-    expect(r.upliftPct).toBe(25); // (1m - 800k) / 800k
+  it('without an AVM gives no verdict, only the agency projection', () => {
+    const r = checkGuide({ avm: null, quoting, asking: null, guide: 1_000_000 });
+    expect(r.headline.tone).toBe('none');
+    expect(r.evidence).toBeNull();
+    expect(r.projection).toBe('If this agency runs true to form (+3.9% median over 10 sales), expect about $1.04m.');
   });
 
-  it('falls back to an AVM-only verdict without agency data (or too few sales)', () => {
-    for (const q of [null, { medianDeviationPct: 20, underquoteRate: 1, nSales: 2 }]) {
-      const r = offerCeiling({ avm, quoting: q, guide: 950_000 });
-      expect(r.verdict).toBe('believable');
-      expect(r.budget).toBe(1_000_000);
-      expect(r.maths).toMatch(/No agency track record/);
-    }
+  it('ignores thin agency records and prompts when nothing is typed', () => {
+    expect(checkGuide({ avm, quoting: { ...quoting, nSales: 2 }, asking: null, guide: 800_000 }).projection).toBeNull();
+    const none = checkGuide({ avm, quoting, asking: 800_000, guide: null });
+    expect(none.headline.tone).toBe('none');
+    expect(none.second).toBeNull();
   });
+});
 
-  it('uses agency data alone when there is no AVM', () => {
-    const r = offerCeiling({ avm: null, quoting, guide: 1_000_000 });
-    expect(r.verdict).toBe('low');
-    expect(r.budget).toBe(1_065_000);
-    expect(r.maths).not.toContain('80% range');
-    const over = offerCeiling({ avm: null, quoting: { medianDeviationPct: -8, underquoteRate: 0, nSales: 10 }, guide: 1_000_000 });
-    expect(over.verdict).toBe('above');
-  });
-
-  it('returns a prompt when no guide is typed, and unknown when there is nothing to go on', () => {
-    const r = offerCeiling({ avm, quoting, guide: null });
-    expect(r.verdict).toBe('none');
-    expect(r.budget).toBe(1_000_000);
-    expect(offerCeiling({ avm: null, quoting: null, guide: 1_000_000 }).verdict).toBe('unknown');
-    expect(offerCeiling({ avm: null, quoting: null, guide: null }).budget).toBeNull();
+describe('avmLine', () => {
+  const rng = { low: 612_000, mid: 785_000, high: 958_000 };
+  it('reads in plain English', () => {
+    expect(avmLine(900_000, rng)).toBe('Your $900k is 15% above the estimate, inside the likely range');
+    expect(avmLine(1_100_000, rng)).toBe('Your $1.1m is 40% above the estimate, above the likely range');
+    expect(avmLine(550_000, rng)).toBe('Your $550k is 30% below the estimate, below the likely range');
+    expect(avmLine(785_000, rng)).toBe('Your $785k is in line with the estimate, inside the likely range');
   });
 });
 

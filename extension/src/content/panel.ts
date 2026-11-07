@@ -186,7 +186,7 @@ export class Panel {
     const verdict = st === 'EXACT' && v.factsPending ? this.pendingVerdict()
       : st === 'EXACT' && v.facts ? this.exactVerdict(v.facts)
       : verdictEl(this.stateVerdict(st, v), cta);
-    const price = st === 'EXACT' && !v.factsPending && v.facts ? priceEstimate(v.facts, this.guide.value) : null;
+    const price = st === 'EXACT' && !v.factsPending && v.facts ? priceEstimate(v.facts) : null;
     const out: HTMLElement[] = [...(price ? [priceBlockEl(price)] : []), verdict, this.receipt(v.ex, v.resolve, v.picked, st)];
     // Order: price block (when there is one) → verdict → verified strip → agency quoting (only if it exists) → 3D next door → value → street → sales → risks → strata → basics → "not available" line.
     if (sections) out.push(...sections.lead);
