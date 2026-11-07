@@ -39,7 +39,7 @@ describe('guide check card', () => {
     expect(pills).toEqual(['Differs from the guide on record ($800k)', 'Inside the range, but 15% above Microburbs’ estimate of $785k']);
     expect(card.textContent).not.toContain('believable');
     expect(card.textContent).toContain('Microburbs estimate $785k (likely range $612k–$958k)');
-    expect(card.textContent).toContain('expect about $935k');
+    expect(card.textContent).toContain('about $935k if this agency runs true to form');
     expect(host.querySelector('.range .guide')).not.toBeNull();
     expect(host.querySelector('.guide-verdict')?.textContent).toBe('Your $900k is 15% above the estimate, inside the likely range');
   });

@@ -36,7 +36,7 @@ describe('Panel', () => {
     expect(q(p, '.cohort-pill')[0].textContent).toBe('Underquoter');
     // AVM drives the price block when there is no agency likely price.
     expect(q(p, '.body > *')[0].classList.contains('price-block')).toBe(true);
-    expect(q(p, '.price-block')[0].textContent).toContain('Microburbs value · $1m');
+    expect(q(p, '.price-block')[0].textContent).toContain('Microburbs value$1m');
     expect(q(p, '.price-block')[0].textContent).toContain('Model estimate from comparable sales · likely $900k–$1.1m');
     expect(q(p, '.card.alert').length).toBe(1);
     expect(t).toContain('$1m');
@@ -96,13 +96,30 @@ describe('Panel', () => {
   it('BUILDING shows bedroom buttons that call back', () => {
     const hs = handlers();
     const p = new Panel(hs);
-    p.render({ kind: 'result', ex, resolve: resolve('BUILDING', { candidates: [{ gnafId: 'g1', label: '901/417 Bourke St', bedrooms: 2 }] }), facts: null, bedrooms: null });
+    p.render({ kind: 'result', ex, resolve: resolve('BUILDING', { candidates: [{ gnafId: 'g1', label: '901/417 Bourke St', bedrooms: null }] }), facts: null, bedrooms: null });
     const btns = [...q(p, '.beds button')] as HTMLButtonElement[];
     expect(btns.map((b) => b.textContent)).toEqual(['1', '2', '3', '4+']);
     btns[1].click();
     expect(hs.onBedrooms).toHaveBeenCalledWith(2);
     (q(p, '.units button')[0] as HTMLButtonElement).click();
     expect(hs.onPick).toHaveBeenCalled();
+  });
+
+  it('BUILDING bedroom chips filter units in place, labels show the unit, level units first', () => {
+    const hs = handlers();
+    const p = new Panel(hs);
+    const candidates = [
+      { gnafId: 'a', label: '301/1 Alfred St', bedrooms: 2 },
+      { gnafId: 'b', label: '803/1 Alfred St', bedrooms: 2 },
+      { gnafId: 'c', label: '804/1 Alfred St', bedrooms: 1 },
+    ];
+    p.render({ kind: 'result', ex: { ...ex, raw: 'Level 8, 1 Alfred Street, Sydney NSW 2000' }, resolve: resolve('BUILDING', { candidates }), facts: null, bedrooms: null });
+    expect([...q(p, '.units button span:first-child')].map((e) => e.textContent)).toEqual(['Unit 803 · 2 bed', 'Unit 804 · 1 bed', 'Unit 301 · 2 bed']);
+    expect(q(p, '.card .count')[0]?.textContent).toBe('3 units');
+    ([...q(p, '.beds button')][1] as HTMLButtonElement).click();
+    expect(hs.onBedrooms).not.toHaveBeenCalled();
+    expect(q(p, '.units button').length).toBe(2);
+    expect(q(p, '.card .count')[0]?.textContent).toBe('2 of 3 units');
   });
 
   it('error state offers retry and manual entry (no endless spinner)', () => {

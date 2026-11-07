@@ -11,7 +11,7 @@ describe('checkGuide', () => {
     expect(r.detail).toBe('Microburbs’ listing record shows $800k for this home. Check which figure is current.');
     expect(r.second).toEqual({ tone: 'warn', text: 'Inside the range, but 15% above Microburbs’ estimate of $785k' });
     expect(r.evidence).toBe('Microburbs estimate $785k (likely range $612k–$958k)');
-    expect(r.projection).toBe('If this agency runs true to form (+3.9% median over 10 sales), expect about $935k.');
+    expect(r.projection).toBe('With your $900k guide: about $935k if this agency runs true to form (+3.9% median over 10 sales).');
   });
 
   it('skips the record check within 5% and compares with the AVM', () => {
@@ -35,7 +35,7 @@ describe('checkGuide', () => {
     const r = checkGuide({ avm: null, quoting, asking: null, guide: 1_000_000 });
     expect(r.headline.tone).toBe('none');
     expect(r.evidence).toBeNull();
-    expect(r.projection).toBe('If this agency runs true to form (+3.9% median over 10 sales), expect about $1.04m.');
+    expect(r.projection).toBe('With your $1m guide: about $1.04m if this agency runs true to form (+3.9% median over 10 sales).');
   });
 
   it('ignores thin agency records and prompts when nothing is typed', () => {

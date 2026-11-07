@@ -251,17 +251,40 @@ export class Panel {
   }
 
   private buildingBlock(v: Extract<PanelView, { kind: 'result' }>): HTMLElement {
-    const beds = [1, 2, 3, 4].map((n) => h('button', { type: 'button', 'aria-pressed': String(v.bedrooms === n), onClick: () => this.handlers.onBedrooms(n) }, n === 4 ? '4+' : String(n)));
+    const all = v.resolve.candidates;
+    const level = /\blevel\s*(\d{1,3})\b/i.exec(v.ex.raw)?.[1] ?? null;
+    const sorted = level ? sortByLevel(all, level) : all;
+    const hasBeds = all.some((c) => c.bedrooms !== null);
+    let chosen = v.bedrooms;
+    const count = h('span', { class: 'count' }, '');
+    const listSlot = h('div', {});
+    const paint = () => {
+      const shown = chosen === null || !hasBeds ? sorted : sorted.filter((c) => c.bedrooms !== null && (chosen === 4 ? c.bedrooms >= 4 : c.bedrooms === chosen));
+      count.textContent = shown.length === all.length ? `${all.length} units` : `${shown.length} of ${all.length} units`;
+      const prev = listSlot.querySelector('ul.units')?.scrollTop ?? 0;
+      listSlot.replaceChildren(...(shown.length ? [this.unitList(shown)] : all.length ? [h('div', { class: 'sub' }, 'No units with that many bedrooms on record.')] : []));
+      const ul = listSlot.querySelector('ul.units');
+      if (ul) ul.scrollTop = prev;
+    };
+    const beds = [1, 2, 3, 4].map((n) => h('button', { type: 'button', 'aria-pressed': String(v.bedrooms === n), onClick: (e: Event) => {
+      // Filter in place when the candidates carry bedrooms (no re-render, no scroll jump); otherwise ask the proxy.
+      if (!hasBeds) { this.handlers.onBedrooms(n); return; }
+      chosen = chosen === n ? null : n;
+      for (const b of (e.currentTarget as HTMLElement).parentElement?.children ?? []) b.setAttribute('aria-pressed', 'false');
+      (e.currentTarget as HTMLElement).setAttribute('aria-pressed', String(chosen === n));
+      paint();
+    } }, n === 4 ? '4+' : String(n)));
+    paint();
     return h('section', { class: 'card', 'aria-label': 'Narrow down the unit' },
-      h('h3', {}, 'Which unit?', h('span', { class: 'count' }, `${v.resolve.candidates.length} units`)),
-      h('div', { class: 'sub' }, 'The listing doesn’t say which unit. How many bedrooms?'),
+      h('h3', {}, 'Which unit?', count),
+      h('div', { class: 'sub' }, `The listing doesn’t say which unit. How many bedrooms?${level ? ` Level ${level} units first.` : ''}`),
       h('div', { class: 'beds', role: 'group', 'aria-label': 'Bedrooms' }, ...beds),
-      v.resolve.candidates.length ? this.unitList(v.resolve.candidates) : null);
+      listSlot);
   }
 
   private unitList(cands: readonly Candidate[]): HTMLElement {
     return h('ul', { class: 'units', 'aria-label': 'Units at this address' }, ...cands.slice(0, 60).map((c) =>
-      h('li', {}, h('button', { onClick: () => this.handlers.onPick(c) }, h('span', {}, c.label), h('span', {}, c.bedrooms ? `${c.bedrooms} bed` : '')))));
+      h('li', {}, h('button', { onClick: () => this.handlers.onPick(c) }, h('span', {}, unitLabel(c)), h('span', {}, c.bedrooms ? `${c.bedrooms} bed` : '')))));
   }
 
   private candidateList(title: string, cands: readonly Candidate[]): HTMLElement {
@@ -283,7 +306,8 @@ export class Panel {
     const gnaf = picked?.gnafId ?? r?.gnafId ?? null;
     const open = this.receiptOpen ?? (st !== 'EXACT' && st !== 'LOADING');
     const idLine = gnaf ?? (picked ? picked.label : r?.receipt?.normalised) ?? ex.raw;
-    const meta = r ? `${entries.length ? `${passed}/${entries.length} checks · ` : ''}conf ${Math.round(r.confidence)}` : '';
+    const conf = r ? Math.round(r.confidence <= 1 ? r.confidence * 100 : r.confidence) : 0;
+    const meta = r ? `${entries.length ? `Address matched · ${passed}/${entries.length} checks · ` : ''}${conf}% match` : '';
     const sec = h('section', { class: `receipt ${st}${open ? ' open' : ''}`, 'aria-label': 'Match receipt' });
     const strip = h('button', { class: 'strip', type: 'button', 'aria-expanded': String(open), title: 'Show the full match receipt',
       onClick: () => this.setReceiptOpen(sec, strip, !sec.classList.contains('open')) },
@@ -292,7 +316,7 @@ export class Panel {
       h('span', { class: 'meta' }, meta),
       h('span', { class: 'chev', 'aria-hidden': 'true' }));
     sec.append(strip, h('div', { class: 'rbody' },
-      h('div', { class: 'ttl' }, h('span', {}, 'Match receipt'), h('span', {}, r ? `confidence ${Math.round(r.confidence)}` : '…')),
+      h('div', { class: 'ttl' }, h('span', {}, 'Match receipt'), h('span', {}, r ? `${conf}% match` : '…')),
       h('dl', {},
         h('dt', {}, 'read'), h('dd', {}, ex.raw),
         h('dt', {}, 'from'), h('dd', {}, `${this.opts.siteLabel?.(ex) ?? (ex.source === 'manual' ? 'you' : ex.source === 'rea' ? 'realestate.com.au' : 'domain.com.au')} · ${FROM_LABEL[ex.from] ?? ex.from}`),
@@ -310,4 +334,22 @@ export class Panel {
       h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit' }, 'Look up'),
         h('button', { class: 'btn ghost', type: 'button', onClick: () => this.handlers.onRetry() }, 'Back to listing')));
   }
+}
+
+/** "901/417 Bourke St" or "Unit 901, 417 Bourke St" → "901"; null when the label carries no unit. */
+export function unitNumber(label: string): string | null {
+  const m = /^\s*(?:(?:unit|apartment|apt|flat|u)\s*)?([0-9]+[a-z]?)\s*\//i.exec(label) ?? /\b(?:unit|apartment|apt|flat)\s*([0-9]+[a-z]?)\b/i.exec(label);
+  return m ? m[1] : null;
+}
+
+/** "Unit 803 · 2 bed" when the label carries a unit number, else the label itself. */
+export function unitLabel(c: Candidate): string {
+  const u = unitNumber(c.label);
+  return u ? `Unit ${u}${c.bedrooms ? ` · ${c.bedrooms} bed` : ''}` : c.label;
+}
+
+/** Units on the listing's level (8xx for Level 8) first, original order otherwise. */
+export function sortByLevel(cands: readonly Candidate[], level: string): Candidate[] {
+  const on = (c: Candidate) => { const u = unitNumber(c.label); return u !== null && u.length > level.length && u.startsWith(level) && u.length - level.length === 2; };
+  return [...cands.filter(on), ...cands.filter((c) => !on(c))];
 }

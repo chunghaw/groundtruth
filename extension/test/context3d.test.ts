@@ -92,6 +92,22 @@ describe('context3dCard', () => {
     el.remove();
   });
 
+  it('says the 3D view is unavailable when the map has not rendered within 12 s (no endless spinner)', async () => {
+    (globalThis as any).IntersectionObserver = undefined;
+    vi.useFakeTimers();
+    try {
+      const { host } = fakeHost();
+      (host as any).mount = vi.fn(() => new Promise(() => {}));
+      const el = context3dCard('GANSW1', host);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(el.querySelector('.c3-stage')?.classList.contains('loading')).toBe(true);
+      await vi.advanceTimersByTimeAsync(12_000);
+      expect(el.querySelector('.c3-stage')?.classList.contains('loading')).toBe(false);
+      expect(el.textContent).toContain('3D view unavailable on this page right now');
+      expect(el.textContent).toContain('Lot 58 m west');
+    } finally { vi.useRealTimers(); }
+  });
+
   it('upgrades the caption to the headroom insight once the map reports it, and wires Reset view', async () => {
     (globalThis as any).IntersectionObserver = undefined;
     const resetView = vi.fn();

@@ -98,10 +98,10 @@ export function context3dCard(gnafId: string, host: Context3DHost, location: Lat
     tools.replaceChildren(seg);
     stage.append(reset);
     legend.replaceChildren(
-      h('span', { class: 'c3-ramp', style: `background:${GHOST_RAMP_CSS}` }), h('span', {}, '+2 → +10 storeys of room'),
+      h('span', { class: 'c3-ramp', style: `background:${GHOST_RAMP_CSS}` }), h('span', {}, '+2 to +10 storeys allowed above today'),
       h('span', { class: 'c3-dot' }), h('span', {}, 'your home'),
       ...(d.heightSource === 'mixed' || d.heightSource === 'fsr-estimate' ? [h('span', { class: 'c3-est' }, 'Some limits estimated from FSR')] : []));
-    foot.textContent = ['Permitted heights: LEP Height of Building / FSR controls via Microburbs. Planning limits, not approved DAs. Today’s heights: OpenStreetMap.', ...d.notes].join(' ');
+    foot.textContent = ['Permitted heights: planning height limits (LEP/FSR) via Microburbs. Planning limits, not approved DAs. Today’s heights: OpenStreetMap.', ...d.notes].join(' ');
   };
 
   const onMapReady = (d: Context3D, m: MapController) => {
@@ -113,12 +113,22 @@ export function context3dCard(gnafId: string, host: Context3DHost, location: Lat
   const startMap = (d: Context3D) => {
     if (st.map || !d.available) return;
     stage.classList.add('loading');
+    // No endless spinner: if the map hasn't rendered in time, say so (the caption above still stands).
+    const slow = h('div', { class: 'c3-fallback c3-timeout' }, '3D view unavailable on this page right now.');
+    const timer = setTimeout(() => {
+      if (st.map || st.mapError) return;
+      stage.classList.remove('loading');
+      stage.append(slow);
+    }, MAP_TIMEOUT_MS);
     host.mount(stage, d).then((m) => {
+      clearTimeout(timer);
+      slow.remove();
       st.map = m;
       stage.classList.remove('loading');
       (Object.keys(st.overlays) as Overlay[]).forEach((k) => (k === 'headroom' ? !st.overlays[k] && m.setOverlay(k, false) : st.overlays[k] && m.setOverlay(k, true)));
       onMapReady(d, m);
     }).catch((e: Error) => {
+      clearTimeout(timer);
       st.mapError = e.message;
       tell(null);
       stage.classList.remove('loading');
@@ -149,10 +159,15 @@ export function context3dCard(gnafId: string, host: Context3DHost, location: Lat
   return card;
 }
 
+/** How long the map gets to render before the card says the 3D view is unavailable. */
+export const MAP_TIMEOUT_MS = 12_000;
+
 export const CONTEXT3D_CSS = /* css */ `
 .c3 .c3-cap { display: grid; gap: 4px; margin: 6px 0 10px; min-height: 36px; }
 .c3 .c3-lead { font: 650 16px/1.25 var(--sans); letter-spacing: -.015em; color: var(--ink); text-wrap: balance; }
 .c3.lead-in-verdict .c3-lead { display: none; }
+.c3.lead-in-verdict .c3-detail { display: none; }
+.c3 .c3-timeout { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; text-align: center; background: #e9e4d8; }
 .c3 .c3-detail { font: 12px/1.4 var(--sans); color: var(--ink-2); }
 .c3 .c3-mine { font: 12px/1.4 var(--sans); color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
 .c3 .c3-dot { width: 10px; height: 10px; border-radius: 3px; background: #1d5a8a; box-shadow: 0 0 0 2px rgba(44,121,181,.25); flex: none; display: inline-block; }
@@ -177,7 +192,7 @@ export const CONTEXT3D_CSS = /* css */ `
 .c3 .c3-sw.roads { background: #b4232c; border-radius: 2px; height: 4px; }
 .c3 .c3-sw.headroom { background: ${GHOST_RAMP_CSS}; border-radius: 2px; box-shadow: inset 0 2px 0 #fff1d6; }
 .c3 .c3-legend { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; font: 11px/1.3 var(--mono); color: var(--ink-3); }
-.c3 .c3-ramp { width: 56px; height: 8px; border-radius: 2px; opacity: .8; }
+.c3 .c3-ramp { width: 56px; height: 10px; border-radius: 2px; opacity: 1; }
 .c3 .c3-legend .c3-dot { margin-left: 8px; }
 .c3 .c3-est { flex-basis: 100%; }
 .c3 .c3-foot { margin-top: 8px; font-size: 10.5px; line-height: 1.4; color: var(--ink-3); }

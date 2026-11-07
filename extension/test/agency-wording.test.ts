@@ -56,7 +56,7 @@ describe('quotingVerdict', () => {
 describe('priceEstimate', () => {
   it('shows the working from this home’s asking price', () => {
     const e = priceEstimate(facts({ ...belvoir, asking_price: 800_000, likely_sale_price: 831_520 }))!;
-    expect(e.working).toBe('This home’s guide $800k + this agency’s typical +3.9% (median of 10 sales)');
+    expect(e.working).toBe('Guide on Microburbs’ record: $800k + this agency’s typical +3.9% (median of 10 sales)');
   });
 });
 
@@ -65,10 +65,10 @@ describe('price check block', () => {
   const ag = { ...belvoir, asking_price: 800_000, likely_sale_price: 831_520 };
   it('shows both numbers and the premium gap', () => {
     const t = priceBlockEl(priceCheck(facts(ag, avm)))!.textContent!;
-    expect(t).toContain('Price check');
-    expect(t).toContain('Likely sale price · about $832k');
-    expect(t).toContain('Guide on record $800k + this agency’s typical +3.9% (10 sales)');
-    expect(t).toContain('Microburbs value · $785k');
+    expect(t).toContain('What it should sell for');
+    expect(t).toContain('Likely sale priceabout $832k');
+    expect(t).toContain('Based on the $800k guide on Microburbs’ record + this agency’s typical +3.9% (10 sales)');
+    expect(t).toContain('Microburbs value$785k');
     expect(t).toContain('Model estimate from comparable sales · likely $612k–$958k · Jul 2026');
     expect(t).toContain('Heading about $47k (6%) above Microburbs’ value');
   });
@@ -78,7 +78,7 @@ describe('price check block', () => {
   });
   it('shows one row alone with no gap line', () => {
     const only = priceBlockEl(priceCheck(facts(null, avm)))!;
-    expect(only.textContent).toContain('Microburbs value · $785k');
+    expect(only.textContent).toContain('Microburbs value$785k');
     expect(only.textContent).not.toContain('Likely sale price');
     expect(only.querySelector('[class^=pgap]')).toBeNull();
     expect(priceBlockEl(priceCheck(facts(ag)))!.textContent).not.toContain('Microburbs value');

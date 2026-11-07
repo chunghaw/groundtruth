@@ -9,7 +9,13 @@ export function money(n: number | null | undefined): string {
 export function pct(n: number | null | undefined): string {
   if (n === null || n === undefined || !Number.isFinite(n)) return '—';
   const v = Math.abs(n) <= 1 ? n * 100 : n;
-  return `${Math.round(v)}%`;
+  return pctValue(v);
+}
+
+/** A value already in percent: 4.25 → "4.3%", 4.0 → "4%" (no 0–1 rescaling, unlike pct). */
+export function pctValue(n: number | null | undefined): string {
+  if (n === null || n === undefined || !Number.isFinite(n)) return '—';
+  return `${n.toFixed(1).replace(/\.0$/, '')}%`;
 }
 
 export function pickNumber(obj: unknown, keys: readonly string[]): number | null {

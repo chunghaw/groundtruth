@@ -1,8 +1,8 @@
 import type { Fact, FactsResponse } from '../api-types';
 import { h } from './dom';
-import { compareGuide, money, parseGuidePrice, pct, pickNumber, pickString, type AvmRange } from './format';
+import { compareGuide, money, parseGuidePrice, pct, pctValue, pickNumber, pickString, type AvmRange } from './format';
 import { offerCeilingCard, type GuideBus } from './offerCard';
-import { avmLine } from './offer';
+import { avmLine, avmTone } from './offer';
 import { fmtPct, salesAboveGuide } from './verdict';
 
 const UNDERQUOTE_ALERT = 0.4; // 40%+ of the agency's recent sales went above guide
@@ -119,6 +119,7 @@ export function agentQuotingCard(fact: Fact | undefined): HTMLElement {
       dev !== null ? h('div', { class: 'scale-title' }, `How far sales landed from the guide (median ${signedPct(dev)})`) : null,
       dev !== null ? deviationScale(dev) : null,
       rows.length ? h('div', { class: 'scale-title aq-others' }, 'This agency’s other recent sales') : null,
+      rows.length ? h('div', { class: 'sub aq-count' }, `Showing ${rows.length} of ${Math.max(rows.length, Math.round(pickNumber(data, ['total_sales', 'n_sales', 'sample_size']) ?? rows.length))} tracked sales`) : null,
       rows.length ? h('ol', { class: 'tl aq-sales', 'aria-label': 'This agency’s other recent sales: guide vs sold' }, ...reveal(rows, 2, 'sales')) : null,
       alert ? h('div', { class: 'note', role: 'note' }, 'Treat the advertised guide as a floor, not an estimate') : null,
     ].filter(Boolean) as HTMLElement[];
@@ -155,7 +156,8 @@ export function avmCard(fact: Fact | undefined, guideState: { value: string }, l
       const g = parseGuidePrice(guideState.value);
       barSlot.replaceChildren(rangeBar(rng, g));
       if (g === null) { verdict.className = 'guide-verdict'; verdict.textContent = ''; return; }
-      verdict.className = `guide-verdict ${compareGuide(g, rng).position}`;
+      // Same tone as the guide-check card's AVM comparison, so one fact never shows in two colours.
+      verdict.className = `guide-verdict ${compareGuide(g, rng).position} ${avmTone(g, { predicted: rng.mid, low: rng.low, high: rng.high })}`;
       verdict.textContent = avmLine(g, rng);
     };
     const input = h('input', { type: 'text', inputmode: 'decimal', placeholder: 'e.g. $1.1m', 'aria-label': 'Guide price you were quoted', value: guideState.value,
@@ -183,7 +185,16 @@ export function saleHistoryCard(fact: Fact | undefined): HTMLElement {
   return card('Last sales', fact, (d) => {
     const list = Array.isArray(d) ? d : Array.isArray(d?.sales) ? d.sales : null;
     if (!list || list.length === 0) return [h('div', { class: 'big' }, 'No recorded sales')];
-    const sorted = [...list].sort((a: any, b: any) => String(b.date ?? b.sold_date ?? '').localeCompare(String(a.date ?? a.sold_date ?? '')));
+    const byDate = [...list].sort((a: any, b: any) => String(b.date ?? b.sold_date ?? '').localeCompare(String(a.date ?? a.sold_date ?? '')));
+    // Only real sales go in "Last sales"; listings (for sale / listed) are shown muted underneath.
+    const isSold = (x: any) => !x?.type || /sold/i.test(String(x.type));
+    const sorted = byDate.filter(isSold);
+    const listed = byDate.filter((x: any) => !isSold(x) && pickNumber(x, ['price', 'sold_price']) !== null).slice(0, 2);
+    const listedEls = listed.map((x: any) => {
+      const when = monthYear(String(x.date ?? '').slice(0, 10)) ?? '';
+      return h('div', { class: 'sub listed' }, `Listed ${money(pickNumber(x, ['price', 'sold_price'])!)}${when ? ` · ${when}` : ''}`);
+    });
+    if (sorted.length === 0) return [h('div', { class: 'big' }, 'No recorded sales'), ...listedEls];
     const rows = sorted.slice(0, 8).map((x: any, i: number) => {
       const price = pickNumber(x, ['price', 'sold_price']);
       const prev = pickNumber(sorted[i + 1], ['price', 'sold_price']);
@@ -192,7 +203,7 @@ export function saleHistoryCard(fact: Fact | undefined): HTMLElement {
         h('span', { class: 'what' }, price !== null ? money(price) : String(x.type ?? '—')),
         ch !== null ? h('span', { class: 'delta' }, `${ch >= 0 ? '+' : ''}${Math.round(ch)}%`) : null);
     });
-    return [h('ol', { class: 'tl', 'aria-label': 'Sales of this home' }, ...reveal(rows, 3, 'sales'))];
+    return [h('ol', { class: 'tl', 'aria-label': 'Sales of this home' }, ...reveal(rows, 3, 'sales')), ...listedEls];
   }, '', 'Microburbs sale history · this exact home');
 }
 
@@ -201,9 +212,9 @@ export function streetCard(fact: Fact | undefined): HTMLElement {
     const st = d?.profile ?? d;
     const sub = d?.suburb_medians ?? {};
     const rows: Array<[string, number | null, number | null, (n: number) => string]> = [
-      ['growth forecast /yr', pickNumber(st, ['annual_4y']), pickNumber(sub, ['annual_4y']), (n) => `${n}%`],
-      ['past growth /yr', pickNumber(st, ['past_growth_pct']), pickNumber(sub, ['past_growth_pct']), (n) => `${n}%`],
-      ['renters', pickNumber(st, ['renters_pct']), pickNumber(sub, ['renters_pct']), (n) => `${n}%`],
+      ['growth forecast /yr', pickNumber(st, ['annual_4y']), pickNumber(sub, ['annual_4y']), pctValue],
+      ['past growth /yr', pickNumber(st, ['past_growth_pct']), pickNumber(sub, ['past_growth_pct']), pctValue],
+      ['renters', pickNumber(st, ['renters_pct']), pickNumber(sub, ['renters_pct']), pctValue],
     ];
     const shown = rows.filter(([, a, b]) => a !== null || b !== null);
     if (!shown.length) return null;
@@ -218,6 +229,31 @@ export function streetCard(fact: Fact | undefined): HTMLElement {
   }, '', 'Microburbs street profile, ABS Census');
 }
 
+const RISK_MEANINGS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/heritage/i, 'Heritage controls may limit renovations'],
+  [/flood/i, 'Flood planning can affect insurance and what you can build'],
+  [/bush ?fire/i, 'Bushfire rules can add building costs'],
+  [/power|transmission|electric|\bhv\b/i, 'High-voltage line close by; some buyers avoid this'],
+  [/aircraft|anef|noise/i, 'Aircraft or road noise may be noticeable'],
+  [/contaminat/i, 'Past land use may need a soil check'],
+  [/acid/i, 'Acid sulfate soils can raise building costs'],
+  [/landslip|slope|geotech/i, 'Ground stability may need an engineer’s report'],
+  [/biodiversity|vegetation|tree/i, 'Vegetation rules may limit clearing or extensions'],
+  [/coast|foreshore/i, 'Coastal rules may limit building'],
+];
+
+/** One plain line on what an on-property overlay means for a buyer. */
+export function riskMeaning(name: string): string {
+  return RISK_MEANINGS.find(([re]) => re.test(name))?.[1] ?? 'Check what this overlay means with the council';
+}
+
+/** An HV power line within 50 m is amber, not "Clear". */
+export function powerLineNear(name: string, x: any, val: string): boolean {
+  if (!/power|transmission|electric|\bhv\b/i.test(name)) return false;
+  const d = pickNumber(x, ['distance_m', 'distance', 'dist_m']) ?? (Number(/(\d+(?:\.\d+)?)\s*m\b/.exec(val)?.[1] ?? NaN));
+  return Number.isFinite(d) ? d < 50 : /under 50|within 50|<\s*50/i.test(val);
+}
+
 export function risksCard(fact: Fact | undefined): HTMLElement {
   return card('Risk overlays', fact, (d) => {
     if (!d || typeof d !== 'object') return null;
@@ -227,7 +263,12 @@ export function risksCard(fact: Fact | undefined): HTMLElement {
       const on = x?.on_property === true;
       const label = typeof x?.name === 'string' ? x.name : humanKey(k);
       const val = typeof x?.value === 'string' ? x.value : on ? 'On property' : typeof x === 'string' ? x : '';
-      return h('div', { class: 'risk' }, h('span', {}, label), h('span', { class: on ? 'on' : 'off' }, val || (on ? 'On property' : 'Clear')));
+      const near = powerLineNear(`${k} ${label}`, x, val);
+      const cls = on ? 'on' : near ? 'warn' : 'off';
+      const why = on || near ? riskMeaning(`${k} ${label}`) : null;
+      return h('div', { class: 'risk' },
+        h('span', {}, label, why ? h('small', { class: 'risk-why' }, why) : null),
+        h('span', { class: cls }, val || (on ? 'On property' : 'Clear')));
     });
   }, '', 'Microburbs risk overlays');
 }

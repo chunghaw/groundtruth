@@ -213,6 +213,15 @@ function nextDoor(ctx: unknown): Obj | null {
 const dropNulls = (o: Obj): Obj =>
   Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null && v !== undefined && !(Array.isArray(v) && !v.length) && !(isObj(v) && !Object.keys(v).length)));
 
+/** "the agency, McGrath Surry Hills, is a mild underquoter": who the cohort label describes, spelled out. */
+export function agencyCohort(q: unknown): { subject: string } | null {
+  const cohort = str(q, ["cohort"]);
+  if (!cohort) return null;
+  const label = cohort.replace(/[_-]+/g, " ").trim().toLowerCase();
+  const name = str(q, ["agency_name"]);
+  return { subject: `the agency${name ? `, ${name},` : ""} is ${/^[aeiou]/.test(label) ? "an" : "a"} ${label}` };
+}
+
 /** The grounded facts the LLM may use: the same sources as the template script, flattened and rounded. */
 export function briefingFacts(facts: Partial<Record<string, Fact>>, context3d: unknown = null): Obj {
   const basics = factData(facts.basics);
@@ -234,6 +243,7 @@ export function briefingFacts(facts: Partial<Record<string, Fact>>, context3d: u
         advertised_guide: num(q, ["asking_price"]),
       })
     : null;
+  const strataLevy = isUnit ? round(num(factData(facts.strataLevy), ["median_levy_annual", "levy_annual", "median_levy"]), 10) : null;
   return dropNulls({
     dwelling_type: str(basics, ["dwelling_type"]),
     bedrooms: num(basics, ["bed_count"]),
@@ -246,8 +256,10 @@ export function briefingFacts(facts: Partial<Record<string, Fact>>, context3d: u
     street_typical_price: !isUnit && isObj(street) ? round(num(street.profile, ["current_price"]), 1000) : null,
     street_name: isObj(street) ? str(street, ["street"]) : null,
     agency,
+    agency_cohort: agencyCohort(q),
     risk_overlays_on_property: riskNames(factData(facts.risks)),
-    strata_levy_per_year: isUnit ? round(num(factData(facts.strataLevy), ["median_levy_annual", "levy_annual", "median_levy"]), 10) : null,
+    strata_levy_per_year: strataLevy,
+    strata_is_suburb_median: strataLevy !== null ? true : null,
     next_door: nextDoor(context3d ?? factData(facts.context3d)),
   });
 }
@@ -261,6 +273,8 @@ export const SYSTEM_PROMPT = [
   "Use ONLY the facts provided; never invent numbers, names or claims. If a fact is missing, don't mention it.",
   "Round numbers for speech and write them as digits (for example $830,000, $1.1 million, 4%, 7 of 10).",
   "At most 75 words. Warm, conversational, a little personality, contractions. No bullet points, no markdown, no greetings like 'Hey there'.",
+  "agency_cohort.subject describes the selling agency's quoting habit, not the home or the vendor.",
+  "strata_levy_per_year is the suburb's median strata levy (strata_is_suburb_median=true), not this building's: say so if you mention it.",
   "End with one practical tip for the inspection. Don't give financial advice; describe the facts.",
 ].join(" ");
 

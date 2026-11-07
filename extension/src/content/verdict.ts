@@ -53,7 +53,7 @@ export function priceWorking(q: unknown): string | null {
   const n = pickNumber(q, ['total_sales', 'n_sales', 'sample_size']);
   const sign = dev >= 0 ? '+' : '−';
   const median = n !== null && n > 0 ? ` (median of ${Math.round(n)} sale${Math.round(n) === 1 ? '' : 's'})` : '';
-  return `This home’s guide ${money(ask)} + this agency’s typical ${sign}${fmtPct(dev)}%${median}`;
+  return `Guide on Microburbs’ record: ${money(ask)} + this agency’s typical ${sign}${fmtPct(dev)}%${median}`;
 }
 
 /** Headline price: agency likely sale price → Microburbs AVM → recorded guide × (1 + agency median deviation). Never the typed guide. */
@@ -110,7 +110,7 @@ export function priceCheck(facts: FactsResponse | null): PriceCheck {
   if (likelyPrice !== null && likelyPrice > 0) {
     const sales = n !== null && n > 0 ? ` (${Math.round(n)} sale${Math.round(n) === 1 ? '' : 's'})` : '';
     const sub = ask !== null && ask > 0 && dev !== null
-      ? `Guide on record ${money(ask)} + this agency’s typical ${dev >= 0 ? '+' : '−'}${fmtPct(dev)}%${sales}`
+      ? `Based on the ${money(ask)} guide on Microburbs’ record + this agency’s typical ${dev >= 0 ? '+' : '−'}${fmtPct(dev)}%${sales}`
       : 'Based on this agency’s guide-vs-sold record';
     likely = { price: likelyPrice, sub };
   }
@@ -142,13 +142,13 @@ export function priceGapLine(c: PriceCheck): string | null {
 export function priceBlockEl(c: PriceCheck): HTMLElement | null {
   if (!c.likely && !c.value) return null;
   const row = (cls: string, label: string, price: number, sub: string) =>
-    h('div', { class: `prow ${cls}` }, h('p', { class: 'price' }, `${label} · `, h('b', {}, `${cls === 'likely' ? 'about ' : ''}${money(price)}`)), h('p', { class: 'psub' }, sub));
+    h('div', { class: `prow ${cls}` }, h('p', { class: 'price' }, h('span', {}, label), h('b', {}, `${cls === 'likely' ? 'about ' : ''}${money(price)}`)), h('p', { class: 'psub' }, sub));
   const v = c.value;
   const vSub = v ? ['Model estimate from comparable sales', v.low !== null && v.high !== null ? `likely ${money(v.low)}–${money(v.high)}` : null, v.date].filter(Boolean).join(' · ') : '';
   const gap = priceGapLine(c);
   const tone = !gap || !c.likely || !v ? '' : c.likely.price - v.price >= 0.03 * v.price ? ' above' : c.likely.price - v.price <= -0.03 * v.price ? ' below' : ' inline';
   return h('div', { class: 'price-block', role: 'status' },
-    h('p', { class: 'kicker' }, 'Price check'),
+    h('p', { class: 'kicker' }, 'What it should sell for'),
     c.likely ? row('likely', 'Likely sale price', c.likely.price, c.likely.sub) : null,
     v ? row('value', 'Microburbs value', v.price, vSub) : null,
     gap ? h('p', { class: `pgap${tone}` }, gap) : null);
@@ -189,7 +189,7 @@ export function headroomVerdict(i: HeadroomInsight | null | undefined): Verdict 
     kicker: 'What can rise next door',
     headline: ['', `${i.count} lot${i.count === 1 ? '' : 's'} within ${i.nearM} m`, ` could rise ${range} more storeys`],
     sub: `Biggest: ${b.distanceM} m ${b.direction}, +${b.storeys} storeys under today’s planning controls.`,
-    tone: 'warn',
+    tone: 'info',
   };
 }
 

@@ -34,7 +34,7 @@ export const COLORS = {
 const BASEMAP_URL = 'https://tiles.openfreemap.org/styles/positron';
 const BASEMAP_TIMEOUT_MS = 3000;
 const OSM_ATTRIBUTION = '© OpenMapTiles © OpenStreetMap contributors';
-const GHOST_OPACITY = 0.5;
+const GHOST_OPACITY = 0.68;
 const VIEW = { zoom: 16.25, pitch: 58 } as const;
 /** Basemap layers kept (muted); everything else (POIs, place labels, shields, flat buildings) goes. */
 const KEEP = /^(background|park|water|landuse_residential|landcover_wood|highway_(minor|major_casing|major_inner|major_subtle|motorway_.*)|railway.*|highway-name-major)$/;
@@ -119,12 +119,12 @@ function addLayers(map: maplibregl.Map, data: Context3D): void {
   const addBelow = (l: unknown) => map.addLayer(l as maplibregl.LayerSpecification, below);
   addBelow({ id: 'gt-noise', type: 'fill', source: 'gt-noise', layout: { visibility: 'none' }, paint: { 'fill-color': ['get', 'color'], 'fill-opacity': ['*', ['coalesce', ['get', 'opacity'], 0.5], 0.6] } });
   addBelow({ id: 'gt-roads', type: 'line', source: 'gt-roads', layout: { visibility: 'none', 'line-cap': 'round' }, paint: { 'line-color': COLORS.road, 'line-width': ['match', ['get', 'roadClass'], ['motorway', 'trunk', 'primary'], 7, 5], 'line-opacity': 0.75, 'line-blur': 1 } });
-  addBelow({ id: 'gt-ghost-foot', type: 'line', source: 'gt-ghosts', paint: { 'line-color': ghostColor, 'line-width': 1.4, 'line-opacity': 0.85, 'line-dasharray': [2, 1.5] } });
+  addBelow({ id: 'gt-ghost-foot', type: 'line', source: 'gt-ghosts', paint: { 'line-color': ghostColor, 'line-width': 2.2, 'line-opacity': 0.85, 'line-dasharray': [2, 1.5] } });
   addBelow({ id: 'gt-pulse', type: 'circle', source: 'gt-home', paint: { 'circle-radius': 10, 'circle-color': COLORS.subjectTop, 'circle-opacity': 0, 'circle-stroke-width': 2, 'circle-stroke-color': COLORS.subjectTop, 'circle-stroke-opacity': 0.6, 'circle-pitch-alignment': 'map', 'circle-pitch-scale': 'map' } });
   add({ id: 'gt-subject', type: 'fill-extrusion', source: 'gt-subject', paint: { 'fill-extrusion-color': ['interpolate', ['linear'], ['get', 'height'], 0, COLORS.subject, 30, COLORS.subjectTop], 'fill-extrusion-height': ['get', 'height'], 'fill-extrusion-base': ['get', 'base'], 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': true } });
   add({ id: 'gt-ghosts', type: 'fill-extrusion', source: 'gt-ghosts', paint: { 'fill-extrusion-color': ghostColor, 'fill-extrusion-base': ['+', ['get', 'base'], 0.15], 'fill-extrusion-height': ghostTop(0), 'fill-extrusion-opacity': GHOST_OPACITY, 'fill-extrusion-vertical-gradient': false } });
   // Bright rim on top of each ghost: a thin slab at the permitted height (MapLibre lines can't float).
-  add({ id: 'gt-ghost-cap', type: 'fill-extrusion', source: 'gt-ghosts', paint: { 'fill-extrusion-color': COLORS.ghostCap, 'fill-extrusion-base': ['max', ['get', 'base'], ['-', ghostTop(0), 0.5]], 'fill-extrusion-height': ghostTop(0), 'fill-extrusion-opacity': 0.8, 'fill-extrusion-vertical-gradient': false } });
+  add({ id: 'gt-ghost-cap', type: 'fill-extrusion', source: 'gt-ghosts', paint: { 'fill-extrusion-color': COLORS.ghostCap, 'fill-extrusion-base': ['max', ['get', 'base'], ['-', ghostTop(0), 0.5]], 'fill-extrusion-height': ghostTop(0), 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': false } });
 }
 
 function setGhostRise(map: maplibregl.Map, t: number): void {

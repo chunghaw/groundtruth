@@ -51,7 +51,12 @@ function usableQuoting(q: QuotingInput | null): QuotingInput | null {
   return q;
 }
 
-function avmVerdict(guide: number, avm: AvmInput): Line {
+/** The tone of the AVM comparison; shared by the guide-check card and the value card. */
+export function avmTone(guide: number, avm: Pick<AvmInput, 'predicted' | 'low' | 'high'>): Tone {
+  return avmVerdict(guide, avm).tone;
+}
+
+function avmVerdict(guide: number, avm: Pick<AvmInput, 'predicted' | 'low' | 'high'>): Line {
   if (guide > avm.high) return { tone: 'bad', text: 'Well above Microburbs’ estimate' };
   if (guide < avm.low) return { tone: 'warn', text: 'Below Microburbs’ estimate — likely to sell higher' };
   const gap = (guide - avm.predicted) / avm.predicted;
@@ -64,7 +69,7 @@ function projection(guide: number, q: QuotingInput | null): string | null {
   const dev = q.medianDeviationPct;
   const sign = dev > 0 ? '+' : dev < 0 ? '−' : '';
   const over = q.nSales !== null ? ` over ${Math.round(q.nSales)} sales` : '';
-  return `If this agency runs true to form (${sign}${Math.abs(dev)}% median${over}), expect about ${money(Math.round(guide * (1 + dev / 100)))}.`;
+  return `With your ${money(guide)} guide: about ${money(Math.round(guide * (1 + dev / 100)))} if this agency runs true to form (${sign}${Math.abs(dev)}% median${over}).`;
 }
 
 export function checkGuide(input: GuideCheckInput): GuideCheck {
