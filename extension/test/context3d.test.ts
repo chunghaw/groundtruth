@@ -88,7 +88,7 @@ describe('context3dCard', () => {
     expect(host.load).toHaveBeenCalledWith('GANSW1', null);
     expect(host.mount).toHaveBeenCalledTimes(1);
     expect(el.textContent).toContain('Lot 58 m west: up to 45 m (≈14 storeys)');
-    expect(el.textContent).toContain('Some estimated');
+    expect(el.textContent).toContain('Some limits estimated from FSR');
     el.remove();
   });
 

@@ -213,7 +213,7 @@ export class Panel {
         h('div', { style: 'margin-top:8px' }, h('button', { class: 'btn', onClick: () => this.handlers.onRetry() }, 'Try again'))));
     }
     out.push(this.wrongHome(v.ex));
-    out.push(h('div', { class: 'foot' }, h('span', {}, 'Only the address is read'), h('span', {}, 'Microburbs · G-NAF')));
+    out.push(h('div', { class: 'foot' }, h('span', {}, 'Only the address was read from this page.'), h('span', {}, 'Data: Microburbs · G-NAF')));
     return out;
   }
 
@@ -323,8 +323,8 @@ export class Panel {
     const strip = h('button', { class: 'strip', type: 'button', 'aria-expanded': String(open), title: 'Show the full match receipt',
       onClick: () => this.setReceiptOpen(sec, strip, !sec.classList.contains('open')) },
       h('span', { class: 'seal', 'aria-hidden': 'true' }, SEAL[st]),
-      h('span', { class: 'who', title: `${idLine}${meta ? ` · ${meta}` : ''}` }, h('b', {}, `${STRIP_TITLE[st]}${entries.length ? ` · ${passed}/${entries.length}` : ''}`)),
-      h('span', { class: 'meta' }, ''),
+      h('span', { class: 'who' }, h('b', {}, STRIP_TITLE[st]), h('span', {}, idLine)),
+      h('span', { class: 'meta' }, meta),
       h('span', { class: 'chev', 'aria-hidden': 'true' }));
     sec.append(strip, h('div', { class: 'rbody' },
       h('div', { class: 'ttl' }, h('span', {}, 'Match receipt'), h('span', {}, r ? `${conf}% match` : '…')),

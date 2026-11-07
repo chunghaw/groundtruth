@@ -34,7 +34,7 @@ export function salesAboveGuide(d: unknown): string | null {
   if (rate === null || n === null || n < 1 || rate < 0 || rate > 1) return null;
   const total = Math.round(n);
   const above = Math.min(total, Math.round(rate * total));
-  return `${above} of ${total} sold above guide`;
+  return `${above} of ${total} of this agency’s recent sale${total === 1 ? '' : 's'} sold above their guide`;
 }
 
 export interface PriceEstimate {
@@ -133,23 +133,23 @@ export function priceGapLine(c: PriceCheck): string | null {
   const diff = c.likely.price - c.value.price;
   const rel = diff / c.value.price;
   const k = Math.abs(diff) >= 1_000_000 ? money(Math.abs(diff)) : `$${Math.round(Math.abs(diff) / 1000)}k`;
-  const amt = `${k} (${Math.round(Math.abs(rel) * 100)}%)`;
-  if (rel >= 0.03) return `+${amt} over value`;
-  if (rel <= -0.03) return `−${amt} under value`;
-  return 'In line with value';
+  const amt = `about ${k} (${Math.round(Math.abs(rel) * 100)}%)`;
+  if (rel >= 0.03) return `Heading ${amt} above Microburbs’ value — that’s the premium if this agency runs true to form.`;
+  if (rel <= -0.03) return `Heading ${amt} below Microburbs’ value — a potential buying opportunity.`;
+  return 'In line with Microburbs’ value.';
 }
 
 export function priceBlockEl(c: PriceCheck): HTMLElement | null {
   if (!c.likely && !c.value) return null;
   const row = (cls: string, label: string, price: number, sub: string) =>
-    h('div', { class: `prow ${cls}`, title: sub }, h('p', { class: 'price' }, h('span', {}, label), h('b', {}, `${cls === 'likely' ? '~' : ''}${money(price)}`)));
+    h('div', { class: `prow ${cls}` }, h('p', { class: 'price' }, h('span', {}, label), h('b', {}, `${cls === 'likely' ? 'about ' : ''}${money(price)}`)), h('p', { class: 'psub' }, sub));
   const v = c.value;
   const vSub = v ? ['Model estimate from comparable sales', v.low !== null && v.high !== null ? `likely ${money(v.low)}–${money(v.high)}` : null, v.date].filter(Boolean).join(' · ') : '';
   const gap = priceGapLine(c);
   const tone = !gap || !c.likely || !v ? '' : c.likely.price - v.price >= 0.03 * v.price ? ' above' : c.likely.price - v.price <= -0.03 * v.price ? ' below' : ' inline';
   return h('div', { class: 'price-block', role: 'status' },
-    h('p', { class: 'kicker' }, 'Price check'),
-    c.likely ? row('likely', 'Likely sale', c.likely.price, c.likely.sub) : null,
+    h('p', { class: 'kicker' }, 'What it should sell for'),
+    c.likely ? row('likely', 'Likely sale price', c.likely.price, c.likely.sub) : null,
     v ? row('value', 'Microburbs value', v.price, vSub) : null,
     gap ? h('p', { class: `pgap${tone}` }, gap) : null);
 }
@@ -174,7 +174,7 @@ export function quotingVerdict(facts: FactsResponse | null): Verdict | null {
     };
   }
   if (rate !== null) {
-    const head: [string, string, string] = above ? ['', above.replace(/ sold above guide$/, ''), ' sold above guide'] : ['', pct(rate), ' of this agency’s sales sold above the guide'];
+    const head: [string, string, string] = above ? ['', above.replace(/ sold above their guide$/, ''), ' sold above their guide'] : ['', pct(rate), ' of this agency’s sales sold above the guide'];
     return { kicker: 'Price guide check', headline: head, sub: agency, tone: rate >= UNDERQUOTE_ALERT ? 'warn' : 'ok' };
   }
   return null;
@@ -239,8 +239,9 @@ function lastSale(facts: FactsResponse | null): { price: number; date: string | 
 }
 
 export function verdictEl(v: Verdict, cta?: HTMLElement | null): HTMLElement {
-  return h('div', { class: `verdict ${v.tone}`, role: 'status', ...(v.sub ? { title: v.sub } : {}) },
+  return h('div', { class: `verdict ${v.tone}`, role: 'status' },
     h('p', { class: 'kicker' }, v.kicker),
     h('h2', {}, v.headline[0], v.headline[1] ? h('em', {}, v.headline[1]) : null, v.headline[2]),
+    v.sub ? h('p', { class: 'vsub' }, v.sub) : null,
     cta ?? null);
 }

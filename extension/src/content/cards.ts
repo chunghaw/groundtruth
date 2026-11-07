@@ -18,16 +18,17 @@ function scalarRows(data: unknown, limit = 6): HTMLElement | null {
   return rows.length ? h('table', { class: 'mini' }, ...rows) : null;
 }
 
-function card(title: string, fact: Fact | undefined, body: (data: any) => HTMLElement[] | null, extraClass = '', source = 'Microburbs', heading = title): HTMLElement {
+function card(title: string, fact: Fact | undefined, body: (data: any) => HTMLElement[] | null, extraClass = '', source = 'Microburbs'): HTMLElement {
   if (!fact || !fact.available || fact.data === null || fact.data === undefined) {
     return h('section', { class: 'card na', 'aria-label': title },
-      h('h3', {}, heading), h('div', { class: 'big' }, fact?.reason ? `Not available: ${fact.reason}` : 'Not available for this home'));
+      h('h3', {}, title), h('div', { class: 'big' }, fact?.reason ? `Not available: ${fact.reason}` : 'Not available for this home'));
   }
   let content: HTMLElement[] | null = null;
   try { content = body(fact.data); } catch { content = null; }
   const fallback = scalarRows(fact.data);
-  return h('section', { class: `card ${extraClass}`.trim(), 'aria-label': title }, h('h3', { title: `Source: ${source}` }, heading),
-    ...(content ?? (fallback ? [fallback] : [h('div', { class: 'sub' }, 'Nothing to summarise.')])));
+  return h('section', { class: `card ${extraClass}`.trim(), 'aria-label': title }, h('h3', {}, title),
+    ...(content ?? (fallback ? [fallback] : [h('div', { class: 'sub' }, 'Data received, nothing to summarise.')])),
+    h('div', { class: 'src' }, `Source: ${source}`));
 }
 
 /** Big figure + unit, so the number carries the weight and the words explain it. */
@@ -96,9 +97,9 @@ export function agentQuotingCard(fact: Fact | undefined): HTMLElement {
     const agency = pickString(data, ['agency_name', 'agency']);
     const dev = pickNumber(data, ['median_deviation_pct', 'avg_gap_pct']);
     const above = salesAboveGuide(data);
-    const headline = above ?? (r !== null ? `${pct(r)} sold above guide` : null);
+    const headline = above ?? (r !== null ? `${pct(r)} of recent sales sold above the guide` : null);
     const typical = dev !== null
-      ? `Typically ${signedPct(dev)}`
+      ? `Typically ${fmtPct(dev)}% ${dev >= 0 ? 'over' : 'under'} the advertised price`
       : null;
     const recent = Array.isArray(data?.recent_sales) ? data.recent_sales.slice(0, 3) : [];
     const rows = recent.map((x: any) => {
@@ -106,21 +107,23 @@ export function agentQuotingCard(fact: Fact | undefined): HTMLElement {
       const addr = shortAddress(pickString(x, ['address', 'street_address']));
       const when = monthYear(String(x.sold_date ?? x.date ?? ''));
       return h('li', {},
-        h('span', { class: 'what' }, `Guide ${money(pickNumber(x, ['guide_price']))} → ${money(pickNumber(x, ['sold_price']))}`),
+        addr ? h('span', { class: 'addr' }, addr) : null,
+        h('span', { class: 'what' }, `Guide ${money(pickNumber(x, ['guide_price']))} → Sold ${money(pickNumber(x, ['sold_price']))}`),
         diff !== null ? h('span', { class: `delta ${diff > 3 ? 'up' : diff < -3 ? 'down' : ''}` }, ` (${signedPct(diff)})`) : null,
-        addr || when ? h('small', { class: 'addr', style: 'display:block;font-size:11px;opacity:.7' }, [addr, when].filter(Boolean).join(' · ')) : null);
+        when ? h('span', { class: 'when-inline' }, ` · ${when}`) : null);
     });
     return [
       headline ? h('div', { class: 'big aq-head' }, headline) : null,
       typical || agency ? h('div', { class: 'sub' }, [typical, agency].filter(Boolean).join(' · ')) : null,
       cohort ? h('span', { class: 'cohort-pill' }, cohortLabel(cohort)) : null,
-      dev !== null ? h('div', { class: 'scale-title' }, 'Sold vs guide') : null,
+      dev !== null ? h('div', { class: 'scale-title' }, `How far sales landed from the guide (median ${signedPct(dev)})`) : null,
       dev !== null ? deviationScale(dev) : null,
-      rows.length ? h('div', { class: 'scale-title aq-others' }, 'Recent sales') : null,
+      rows.length ? h('div', { class: 'scale-title aq-others' }, 'This agency’s other recent sales') : null,
+      rows.length ? h('div', { class: 'sub aq-count' }, `Showing ${rows.length} of ${Math.max(rows.length, Math.round(pickNumber(data, ['total_sales', 'n_sales', 'sample_size']) ?? rows.length))} tracked sales`) : null,
       rows.length ? h('ol', { class: 'tl aq-sales', 'aria-label': 'This agency’s other recent sales: guide vs sold' }, ...reveal(rows, 2, 'sales')) : null,
-      alert ? h('div', { class: 'note', role: 'note' }, 'Treat the guide as a floor.') : null,
+      alert ? h('div', { class: 'note', role: 'note' }, 'Treat the advertised guide as a floor, not an estimate') : null,
     ].filter(Boolean) as HTMLElement[];
-  }, alert ? 'alert' : '', 'Microburbs · agency sales, guide vs sold', 'Agency quoting');
+  }, alert ? 'alert' : '', 'Microburbs · agency sales, guide vs sold');
 }
 
 export function avmRange(d: unknown): AvmRange | null {
@@ -163,18 +166,18 @@ export function avmCard(fact: Fact | undefined, guideState: { value: string }, l
     queueMicrotask(update);
     const date = pickString(d, ['prediction_date', 'date']);
     return [
-      h('div', { class: 'big', title: `80% range${date ? ` · as of ${date}` : ''}` }, `${money(rng.low)} – ${money(rng.high)}`),
+      h('div', { class: 'sub' }, `Estimate ${money(rng.mid)} · 80% range ${money(rng.low)} – ${money(rng.high)}${date ? ` · as of ${date}` : ''}`),
       barSlot,
       h('div', { class: 'range-labels' }, h('span', {}, money(rng.low)), h('span', {}, money(rng.high))),
       conf !== null ? h('div', { class: 'conf' }, h('span', {}, 'confidence'), h('div', { class: 'meter' }, h('i', { style: `width:${Math.min(100, conf <= 1 ? conf * 100 : conf)}%` })), h('span', {}, pct(conf))) : null,
-      listeners ? null : h('label', { class: 'sub', style: 'display:block;margin-top:10px' }, 'Your guide'),
+      listeners ? null : h('label', { class: 'sub', style: 'display:block;margin-top:10px' }, 'Type the guide you were given (stays on this page):'),
       listeners ? null : h('div', { class: 'guide-row' }, input),
       verdict,
     ].filter(Boolean) as HTMLElement[];
   }, 'hero', 'Microburbs automated valuation');
   // aria-label stays 'Microburbs value' (video shots select it); the visible title says what it now shows.
   const h3 = el.querySelector('h3');
-  if (h3 && !el.classList.contains('na')) h3.textContent = 'Value range';
+  if (h3 && !el.classList.contains('na')) h3.textContent = 'Microburbs value range';
   return el;
 }
 
@@ -227,21 +230,21 @@ export function streetCard(fact: Fact | undefined): HTMLElement {
 }
 
 const RISK_MEANINGS: ReadonlyArray<readonly [RegExp, string]> = [
-  [/heritage/i, 'May limit renovations'],
-  [/flood/i, 'Affects insurance and building'],
-  [/bush ?fire/i, 'Adds building costs'],
-  [/power|transmission|electric|\bhv\b/i, 'High-voltage line close by'],
-  [/aircraft|anef|noise/i, 'Noise may be noticeable'],
-  [/contaminat/i, 'May need a soil check'],
-  [/acid/i, 'Can raise building costs'],
-  [/landslip|slope|geotech/i, 'May need an engineer’s report'],
-  [/biodiversity|vegetation|tree/i, 'May limit clearing or extensions'],
-  [/coast|foreshore/i, 'May limit building'],
+  [/heritage/i, 'Heritage controls may limit renovations'],
+  [/flood/i, 'Flood planning can affect insurance and what you can build'],
+  [/bush ?fire/i, 'Bushfire rules can add building costs'],
+  [/power|transmission|electric|\bhv\b/i, 'High-voltage line close by; some buyers avoid this'],
+  [/aircraft|anef|noise/i, 'Aircraft or road noise may be noticeable'],
+  [/contaminat/i, 'Past land use may need a soil check'],
+  [/acid/i, 'Acid sulfate soils can raise building costs'],
+  [/landslip|slope|geotech/i, 'Ground stability may need an engineer’s report'],
+  [/biodiversity|vegetation|tree/i, 'Vegetation rules may limit clearing or extensions'],
+  [/coast|foreshore/i, 'Coastal rules may limit building'],
 ];
 
 /** One plain line on what an on-property overlay means for a buyer. */
 export function riskMeaning(name: string): string {
-  return RISK_MEANINGS.find(([re]) => re.test(name))?.[1] ?? 'Check with the council';
+  return RISK_MEANINGS.find(([re]) => re.test(name))?.[1] ?? 'Check what this overlay means with the council';
 }
 
 /** An HV power line within 50 m is amber, not "Clear". */
@@ -267,7 +270,7 @@ export function risksCard(fact: Fact | undefined): HTMLElement {
         h('span', {}, label, why ? h('small', { class: 'risk-why' }, why) : null),
         h('span', { class: cls }, val || (on ? 'On property' : 'Clear')));
     });
-  }, '', 'Microburbs risk overlays', 'Risks');
+  }, '', 'Microburbs risk overlays');
 }
 
 export function strataCard(fact: Fact | undefined): HTMLElement {
@@ -276,8 +279,8 @@ export function strataCard(fact: Fact | undefined): HTMLElement {
     if (levy === null) return null;
     const n = pickNumber(d, ['n_properties', 'count']);
     const area = pickString(d, ['area_name', 'suburb']);
-    return [bigFigure(money(levy), '/yr'), h('div', { class: 'sub', title: `Suburb median${area ? ` · ${area}` : ''}${n !== null ? ` · ${n} buildings` : ''}` }, `${money(levy / 4)} a quarter`)];
-  }, '', 'Microburbs strata data', 'Strata levy');
+    return [bigFigure(money(levy), '/yr'), h('div', { class: 'sub' }, `${money(levy / 4)} a quarter${area ? ` · ${area}` : ''}${n !== null ? ` · ${n} buildings` : ''}`)];
+  }, '', 'Microburbs strata data');
 }
 
 export function basicsSection(fact: Fact | undefined): HTMLElement {
@@ -292,7 +295,7 @@ export const isAvailable = (f: Fact | undefined): f is Fact => !!f && f.availabl
 export function unavailableLine(missing: ReadonlyArray<{ label: string; fact: Fact | undefined }>): HTMLElement | null {
   if (!missing.length) return null;
   return h('details', { class: 'na-line', 'aria-label': 'Not available for this home' },
-    h('summary', {}, h('span', {}, `Not available: ${missing.map((m) => m.label).join(', ')} · `), h('span', { class: 'why' }, 'why?')),
+    h('summary', {}, h('span', {}, `Not available for this home: ${missing.map((m) => m.label).join(', ')}`), h('span', { class: 'why' }, 'why?')),
     h('ul', {}, ...missing.map((m) => h('li', {}, h('b', {}, m.label), ` ${m.fact?.reason ?? 'no data returned for this home'}`))));
 }
 
@@ -306,15 +309,15 @@ export function factSections(facts: FactsResponse, guideState: { value: string }
     missing.push({ label, fact });
     return null;
   };
-  const lead = [when('agency', f.agentQuoting, () => agentQuotingCard(f.agentQuoting))];
+  const lead = [when('agency quoting', f.agentQuoting, () => agentQuotingCard(f.agentQuoting))];
   const value = isAvailable(f.avm) || isAvailable(f.agentQuoting) ? offerCeilingCard(f.avm, f.agentQuoting, bus) : null;
   const rest = [
     value,
-    when('value', f.avm, () => avmCard(f.avm, guideState, value ? bus.listeners : undefined)),
-    when('street', f.streetProfile, () => streetCard(f.streetProfile)),
-    when('sales', f.saleHistory, () => saleHistoryCard(f.saleHistory)),
-    when('risks', f.risks, () => risksCard(f.risks)),
-    when('strata', f.strataLevy, () => strataCard(f.strataLevy)),
+    when('independent value', f.avm, () => avmCard(f.avm, guideState, value ? bus.listeners : undefined)),
+    when('street profile', f.streetProfile, () => streetCard(f.streetProfile)),
+    when('sale history', f.saleHistory, () => saleHistoryCard(f.saleHistory)),
+    when('risk overlays', f.risks, () => risksCard(f.risks)),
+    when('strata levy', f.strataLevy, () => strataCard(f.strataLevy)),
     isAvailable(f.basics) ? basicsSection(f.basics) : null,
   ];
   if (!isAvailable(f.basics)) missing.push({ label: 'basics', fact: f.basics });

@@ -29,22 +29,22 @@ describe('Panel', () => {
     const t = text(p);
     expect(t).toContain('Exact');
     expect(t).toContain('GANSW1');
-    expect(t).toContain('13 of 21 sold above guide');
-    expect(t).toContain('Guide $900k → $960k');
+    expect(t).toContain('13 of 21 of this agency’s recent sales sold above their guide');
+    expect(t).toContain('Guide $900k → Sold $960k');
     expect(t).toContain('(+6.7%)');
-    expect(t).toContain('Treat the guide as a floor.');
+    expect(t).toContain('Treat the advertised guide as a floor, not an estimate');
     expect(q(p, '.cohort-pill')[0].textContent).toBe('Underquoter');
     // AVM drives the price block when there is no agency likely price.
     expect(q(p, '.body > *')[0].classList.contains('price-block')).toBe(true);
     expect(q(p, '.price-block')[0].textContent).toContain('Microburbs value$1m');
-    expect(q(p, '.price-block .prow.value')[0].getAttribute('title')).toContain('Model estimate from comparable sales · likely $900k–$1.1m');
+    expect(q(p, '.price-block')[0].textContent).toContain('Model estimate from comparable sales · likely $900k–$1.1m');
     expect(q(p, '.card.alert').length).toBe(1);
     expect(t).toContain('$1m');
     expect(t).toContain('no street row');
     const titles = [...q(p, '.card h3')].map((e) => e.textContent);
-    expect(titles.slice(0, 3)).toEqual(['Agency quoting', 'Check a guide', 'Value range']);
+    expect(titles.slice(0, 3)).toEqual(['Agency quoting accuracy', 'Check a guide you were given', 'Microburbs value range']);
     expect(titles.indexOf('Street vs suburb')).toBe(-1); // unavailable: no card, just the quiet line
-    expect(q(p, 'details.na-line summary')[0].textContent).toContain('Not available: street');
+    expect(q(p, 'details.na-line summary')[0].textContent).toContain('Not available for this home: street profile');
     p.render({ kind: 'result', ex, resolve: resolve('EXACT'), bedrooms: null, facts: { gnafId: 'G', facts: {
       streetProfile: { available: true, data: { profile: { title: 'Mock Street', annual_4y: 5.1, renters_pct: '45%' }, suburb_medians: { annual_4y: 4.8, renters_pct: 50 }, forecast_rank: { band: 'Top 15%' } } } } } });
     expect(text(p)).toContain('5.1% · 4.8%');
@@ -53,7 +53,7 @@ describe('Panel', () => {
     expect(text(p)).toContain('Not available'); // missing facts render gracefully
     expect(t).toContain('$4,200/yr');
     expect([...q(p, '.card h3')].map((e) => e.textContent)).toEqual(['Street vs suburb']); // no budget without AVM or quoting
-    expect(q(p, 'details.na-line')[0].textContent).toContain('agency, value');
+    expect(q(p, 'details.na-line')[0].textContent).toContain('agency quoting, independent value');
   });
 
   it('moves the 3D card up and upgrades the verdict in place once headroom arrives', async () => {
@@ -159,7 +159,7 @@ describe('Panel', () => {
     const sec = q(p, 'section.receipt')[0] as HTMLElement;
     expect(sec.classList.contains('open')).toBe(false); // EXACT starts compact
     expect(sec.textContent).toContain('Verified home');
-    expect(sec.textContent).toContain('Verified home · 4/4');
+    expect(sec.textContent).toContain('4/4 checks');
     (q(p, 'section.receipt .strip')[0] as HTMLButtonElement).click();
     expect(sec.classList.contains('open')).toBe(true);
     expect(q(p, 'section.receipt dl dd').length).toBeGreaterThanOrEqual(4);
@@ -171,7 +171,7 @@ describe('Panel', () => {
     const p = new Panel(handlers());
     p.render({ kind: 'result', ex, resolve: resolve('NO_MATCH', { message: 'No home matched' }), facts: null, bedrooms: null });
     expect((q(p, 'section.receipt')[0] as HTMLElement).classList.contains('open')).toBe(true);
-    expect(q(p, '.verdict')[0].getAttribute('title')).toContain('No home matched');
+    expect(q(p, '.verdict')[0].textContent).toContain('No home matched');
   });
 
   it('3D caption never promises "up to 3 m" for an older tower', () => {

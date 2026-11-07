@@ -13,8 +13,8 @@ const facts = (agentQuoting: unknown, avm: unknown = null) => ({ gnafId: 'G', fa
 } }) as any;
 
 describe('salesAboveGuide', () => {
-  it('derives "7 of 10" from rate × total', () => expect(salesAboveGuide(belvoir)).toBe('7 of 10 sold above guide'));
-  it('accepts a 0-1 rate', () => expect(salesAboveGuide({ underquote_rate: 0.333, total_sales: 3 })).toBe('1 of 3 sold above guide'));
+  it('derives "7 of 10" from rate × total', () => expect(salesAboveGuide(belvoir)).toBe('7 of 10 of this agency’s recent sales sold above their guide'));
+  it('accepts a 0-1 rate', () => expect(salesAboveGuide({ underquote_rate: 0.333, total_sales: 3 })).toBe('1 of 3 of this agency’s recent sales sold above their guide'));
   it('is null when the rate or count is missing', () => {
     expect(salesAboveGuide({ total_sales: 10 })).toBeNull();
     expect(salesAboveGuide({ underquote_rate_pct: 70 })).toBeNull();
@@ -27,16 +27,16 @@ describe('agency card wording', () => {
   it('reads in plain English', () => {
     const el = agentQuotingCard({ available: true, data: belvoir } as any);
     const t = el.textContent ?? '';
-    expect(el.querySelector('.aq-head')?.textContent).toBe('7 of 10 sold above guide');
-    expect(t).toContain('Typically +3.9% · McGrath Surry Hills');
+    expect(el.querySelector('.aq-head')?.textContent).toBe('7 of 10 of this agency’s recent sales sold above their guide');
+    expect(t).toContain('Typically 3.9% over the advertised price · McGrath Surry Hills');
     expect(el.querySelector('.cohort-pill')?.textContent).toBe('Mild underquoter');
-    expect(t).toContain('Sold vs guide');
-    expect(t).toContain('Guide $600k → $620k');
+    expect(t).toContain('How far sales landed from the guide (median +3.9%)');
+    expect(t).toContain('Guide $600k → Sold $620k');
     expect(t).toContain('(+3.3%)');
-    expect(t).toContain('Recent sales');
-    expect(el.querySelector('.aq-sales .addr')?.textContent).toBe('5/68 Bayswater Rd, Rushcutters Bay · Mar 2026');
-    expect(el.querySelector('.aq-sales li')?.textContent).toContain('Guide $600k → $620k (+3.3%)');
-    expect(t).toContain('Treat the guide as a floor.');
+    expect(t).toContain('This agency’s other recent sales');
+    expect(el.querySelector('.aq-sales .addr')?.textContent).toBe('5/68 Bayswater Rd, Rushcutters Bay');
+    expect(el.querySelector('.aq-sales li')?.textContent).toContain('Guide $600k → Sold $620k (+3.3%) · Mar 2026');
+    expect(t).toContain('Treat the advertised guide as a floor, not an estimate');
     expect(t).not.toContain('beat the guide');
   });
 });
@@ -45,11 +45,11 @@ describe('quotingVerdict', () => {
   it('uses the plain sales-above-guide count as its sub-line', () => {
     const v = quotingVerdict(facts(belvoir))!;
     expect(v.headline.join('')).toBe('Agency usually sells 3.9% over guide');
-    expect(v.sub).toBe('7 of 10 sold above guide · McGrath Surry Hills');
+    expect(v.sub).toBe('7 of 10 of this agency’s recent sales sold above their guide · McGrath Surry Hills');
   });
   it('falls back to the count headline without a median', () => {
     const v = quotingVerdict(facts({ underquote_rate_pct: 70, total_sales: 10 }))!;
-    expect(v.headline.join('')).toBe('7 of 10 sold above guide');
+    expect(v.headline.join('')).toBe('7 of 10 of this agency’s recent sales sold above their guide');
   });
 });
 
@@ -65,17 +65,16 @@ describe('price check block', () => {
   const ag = { ...belvoir, asking_price: 800_000, likely_sale_price: 831_520 };
   it('shows both numbers and the premium gap', () => {
     const t = priceBlockEl(priceCheck(facts(ag, avm)))!.textContent!;
-    const el = priceBlockEl(priceCheck(facts(ag, avm)))!;
-    expect(t).toContain('Price check');
-    expect(t).toContain('Likely sale~$832k');
-    expect(el.querySelector('.prow.likely')?.getAttribute('title')).toBe('Based on the $800k guide on Microburbs’ record + this agency’s typical +3.9% (10 sales)');
+    expect(t).toContain('What it should sell for');
+    expect(t).toContain('Likely sale priceabout $832k');
+    expect(t).toContain('Based on the $800k guide on Microburbs’ record + this agency’s typical +3.9% (10 sales)');
     expect(t).toContain('Microburbs value$785k');
-    expect(el.querySelector('.prow.value')?.getAttribute('title')).toBe('Model estimate from comparable sales · likely $612k–$958k · Jul 2026');
-    expect(t).toContain('+$47k (6%) over value');
+    expect(t).toContain('Model estimate from comparable sales · likely $612k–$958k · Jul 2026');
+    expect(t).toContain('Heading about $47k (6%) above Microburbs’ value');
   });
   it('flags a below-value gap and an in-line one', () => {
-    expect(priceBlockEl(priceCheck(facts(ag, { ...avm, predicted_price: 900_000 })))!.textContent).toContain('under value');
-    expect(priceBlockEl(priceCheck(facts(ag, { ...avm, predicted_price: 830_000 })))!.textContent).toContain('In line with value');
+    expect(priceBlockEl(priceCheck(facts(ag, { ...avm, predicted_price: 900_000 })))!.textContent).toContain('below Microburbs’ value');
+    expect(priceBlockEl(priceCheck(facts(ag, { ...avm, predicted_price: 830_000 })))!.textContent).toContain('In line with Microburbs’ value');
   });
   it('shows one row alone with no gap line', () => {
     const only = priceBlockEl(priceCheck(facts(null, avm)))!;

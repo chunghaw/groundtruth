@@ -10,17 +10,17 @@ export interface GuideBus {
 }
 
 const TITLE = 'Check a guide you were given';
-const LABEL = 'Check a guide';
 
 const pill = (l: Line) => h('div', { class: `offer-pill ${l.tone}`, role: 'status' }, l.text);
 
 function paint(slot: HTMLElement, r: GuideCheck): void {
-  const sub = r.second?.text ?? r.projection;
   const parts = [
-    r.headline.tone === 'none' && r.headline.text.startsWith('Type') ? null : pill(r.headline),
-    sub ? h('div', { class: 'offer-detail' }, sub) : null,
+    r.headline.tone === 'none' && r.headline.text.startsWith('Type') ? h('div', { class: 'offer-maths' }, r.headline.text) : pill(r.headline),
+    r.detail ? h('div', { class: 'offer-detail' }, r.detail) : null,
+    r.second ? pill(r.second) : null,
+    r.evidence ? h('div', { class: 'offer-maths' }, r.evidence) : null,
+    r.projection ? h('div', { class: 'offer-note' }, r.projection) : null,
   ].filter((x): x is HTMLDivElement => x !== null);
-  slot.title = [r.detail, r.evidence, r.projection].filter(Boolean).join(' · ');
   slot.replaceChildren(...parts);
 }
 
@@ -28,21 +28,21 @@ export function offerCeilingCard(avmFact: Fact | undefined, quotingFact: Fact | 
   const avm = avmFromFact(avmFact);
   const quoting = quotingFromFact(quotingFact);
   if (!avm && !quoting) {
-    return h('section', { class: 'card offer na', 'aria-label': TITLE }, h('h3', {}, LABEL),
-      h('div', { class: 'big' }, 'Not enough data'));
+    return h('section', { class: 'card offer na', 'aria-label': TITLE }, h('h3', {}, TITLE),
+      h('div', { class: 'big' }, 'Not enough data: no Microburbs value or agency track record for this home.'));
   }
   const slot = h('div', { 'aria-live': 'polite' });
   const asking = quotingFact?.available ? pickNumber(quotingFact.data, ['asking_price']) : null;
   const update = () => paint(slot, checkGuide({ avm, quoting, asking, guide: parseGuidePrice(bus.state.value) }));
   const input = h('input', {
-    id: 'gt-guide', type: 'text', inputmode: 'decimal', autocomplete: 'off', placeholder: 'e.g. $850k', value: bus.state.value,
+    id: 'gt-guide', type: 'text', inputmode: 'decimal', autocomplete: 'off', placeholder: 'e.g. $1.1m or 1.05m – 1.15m', value: bus.state.value,
     onInput: (e: Event) => { bus.state.value = (e.target as HTMLInputElement).value; bus.listeners.forEach((fn) => fn()); },
   });
   bus.listeners.push(update);
   update();
   return h('section', { class: 'card offer', 'aria-label': TITLE },
-    h('h3', {}, LABEL),
-    h('label', { class: 'sub', for: 'gt-guide', title: 'Typed by you. We never read prices from the listing.' }, 'Guide you were quoted'),
+    h('h3', {}, TITLE),
+    h('label', { class: 'sub', for: 'gt-guide' }, 'Guide the agent told you (typed by you — we never read prices from the listing)'),
     h('div', { class: 'guide-row' }, input),
     slot);
 }

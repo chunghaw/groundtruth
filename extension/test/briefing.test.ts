@@ -55,7 +55,7 @@ describe('BriefingControl', () => {
     const c = new BriefingControl(deps);
     const btn = c.button('GANSW1');
     const cap = c.captions();
-    expect(btn.textContent).toContain('Listen · 30s');
+    expect(btn.textContent).toContain('30-sec briefing');
     btn.click();
     await flush();
     expect(deps.fetchBriefing).toHaveBeenCalledWith('GANSW1');
@@ -66,7 +66,7 @@ describe('BriefingControl', () => {
     expect(cap.querySelector('.now')?.textContent).toBe('Second bit.');
     release(); await flush();
     expect(spoken).toEqual(['First bit.', 'Second bit.']);
-    expect(btn.textContent).toContain('Listen · 30s');
+    expect(btn.textContent).toContain('30-sec briefing');
     expect(cap.hidden).toBe(true);
   });
 
@@ -85,7 +85,7 @@ describe('BriefingControl', () => {
     btn.click(); await flush();
     c.button('G2'); // different home: stop
     expect(deps.cancelSpeech).toHaveBeenCalledTimes(2);
-    expect(btn.textContent).toContain('Listen · 30s');
+    expect(btn.textContent).toContain('30-sec briefing');
   });
 
   it('shows a short error when the briefing cannot be fetched', async () => {
@@ -93,7 +93,7 @@ describe('BriefingControl', () => {
     const btn = c.button('G1');
     btn.click(); await flush();
     expect(c.captions().textContent).toMatch(/unavailable/i);
-    expect(btn.textContent).toContain('Listen · 30s');
+    expect(btn.textContent).toContain('30-sec briefing');
   });
 });
 
