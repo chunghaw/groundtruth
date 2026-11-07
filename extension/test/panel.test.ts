@@ -36,13 +36,13 @@ describe('Panel', () => {
     expect(q(p, '.cohort-pill')[0].textContent).toBe('Underquoter');
     // AVM drives the price block when there is no agency likely price.
     expect(q(p, '.body > *')[0].classList.contains('price-block')).toBe(true);
-    expect(q(p, '.price-block')[0].textContent).toContain('Likely to sell for about $1m');
-    expect(q(p, '.price-block')[0].textContent).toContain('Microburbs estimate');
+    expect(q(p, '.price-block')[0].textContent).toContain('Microburbs value · $1m');
+    expect(q(p, '.price-block')[0].textContent).toContain('Model estimate from comparable sales · likely $900k–$1.1m');
     expect(q(p, '.card.alert').length).toBe(1);
     expect(t).toContain('$1m');
     expect(t).toContain('no street row');
     const titles = [...q(p, '.card h3')].map((e) => e.textContent);
-    expect(titles.slice(0, 3)).toEqual(['Agency quoting accuracy', 'Check a guide you were given', 'Microburbs value']);
+    expect(titles.slice(0, 3)).toEqual(['Agency quoting accuracy', 'Check a guide you were given', 'Microburbs value range']);
     expect(titles.indexOf('Street vs suburb')).toBe(-1); // unavailable: no card, just the quiet line
     expect(q(p, 'details.na-line summary')[0].textContent).toContain('Not available for this home: street profile');
     p.render({ kind: 'result', ex, resolve: resolve('EXACT'), bedrooms: null, facts: { gnafId: 'G', facts: {

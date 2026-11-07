@@ -6,7 +6,7 @@ import { PANEL_CSS } from './styles';
 import { BriefingControl, BRIEFING_CSS, type BriefingDeps } from './briefing';
 import { OFFER_CSS } from './offerCard';
 import { context3dCard, CONTEXT3D_CSS } from '../context3d/card';
-import { factsVerdict, headroomVerdict, priceBlockEl, priceEstimate, quotingVerdict, verdictEl, type Verdict } from './verdict';
+import { factsVerdict, headroomVerdict, priceBlockEl, priceCheck, quotingVerdict, verdictEl, type Verdict } from './verdict';
 import type { Context3DHost, HeadroomInsight } from '../context3d/types';
 
 /** How long the verdict waits for the 3D headroom finding before settling on the next fallback. */
@@ -186,8 +186,8 @@ export class Panel {
     const verdict = st === 'EXACT' && v.factsPending ? this.pendingVerdict()
       : st === 'EXACT' && v.facts ? this.exactVerdict(v.facts)
       : verdictEl(this.stateVerdict(st, v), cta);
-    const price = st === 'EXACT' && !v.factsPending && v.facts ? priceEstimate(v.facts) : null;
-    const out: HTMLElement[] = [...(price ? [priceBlockEl(price)] : []), verdict, this.receipt(v.ex, v.resolve, v.picked, st)];
+    const price = st === 'EXACT' && !v.factsPending && v.facts ? priceBlockEl(priceCheck(v.facts)) : null;
+    const out: HTMLElement[] = [...(price ? [price] : []), verdict, this.receipt(v.ex, v.resolve, v.picked, st)];
     // Order: price block (when there is one) → verdict → verified strip → agency quoting (only if it exists) → 3D next door → value → street → sales → risks → strata → basics → "not available" line.
     if (sections) out.push(...sections.lead);
     if (c3) out.push(c3);

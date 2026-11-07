@@ -145,7 +145,7 @@ function rangeBar(rng: AvmRange, guide: number | null): HTMLElement {
 
 /** With `listeners`, the guide input lives in the guide-check card and this card only reacts to it. */
 export function avmCard(fact: Fact | undefined, guideState: { value: string }, listeners?: Array<() => void>): HTMLElement {
-  return card('Microburbs value', fact, (d) => {
+  const el = card('Microburbs value', fact, (d) => {
     const rng = avmRange(d);
     if (!rng) return null;
     const conf = pickNumber(d, ['confidence', 'confidence_score', 'accuracy']);
@@ -164,8 +164,7 @@ export function avmCard(fact: Fact | undefined, guideState: { value: string }, l
     queueMicrotask(update);
     const date = pickString(d, ['prediction_date', 'date']);
     return [
-      bigFigure(money(rng.mid), 'estimate'),
-      h('div', { class: 'sub' }, `80% range ${money(rng.low)} – ${money(rng.high)}${date ? ` · as of ${date}` : ''}`),
+      h('div', { class: 'sub' }, `Estimate ${money(rng.mid)} · 80% range ${money(rng.low)} – ${money(rng.high)}${date ? ` · as of ${date}` : ''}`),
       barSlot,
       h('div', { class: 'range-labels' }, h('span', {}, money(rng.low)), h('span', {}, money(rng.high))),
       conf !== null ? h('div', { class: 'conf' }, h('span', {}, 'confidence'), h('div', { class: 'meter' }, h('i', { style: `width:${Math.min(100, conf <= 1 ? conf * 100 : conf)}%` })), h('span', {}, pct(conf))) : null,
@@ -174,6 +173,10 @@ export function avmCard(fact: Fact | undefined, guideState: { value: string }, l
       verdict,
     ].filter(Boolean) as HTMLElement[];
   }, 'hero', 'Microburbs automated valuation');
+  // aria-label stays 'Microburbs value' (video shots select it); the visible title says what it now shows.
+  const h3 = el.querySelector('h3');
+  if (h3 && !el.classList.contains('na')) h3.textContent = 'Microburbs value range';
+  return el;
 }
 
 export function saleHistoryCard(fact: Fact | undefined): HTMLElement {

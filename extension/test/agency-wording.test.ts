@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { agentQuotingCard } from '../src/content/cards';
-import { priceBlockEl, priceEstimate, quotingVerdict, salesAboveGuide } from '../src/content/verdict';
+import { priceBlockEl, priceCheck, priceEstimate, quotingVerdict, salesAboveGuide } from '../src/content/verdict';
 
 const belvoir = {
   agency_name: 'McGrath Surry Hills', cohort: 'Mild Underquoter', median_deviation_pct: 3.9, underquote_rate_pct: 70,
@@ -57,7 +57,32 @@ describe('priceEstimate', () => {
   it('shows the working from this home’s asking price', () => {
     const e = priceEstimate(facts({ ...belvoir, asking_price: 800_000, likely_sale_price: 831_520 }))!;
     expect(e.working).toBe('This home’s guide $800k + this agency’s typical +3.9% (median of 10 sales)');
-    expect(priceBlockEl(e).textContent).toContain('This home’s guide $800k + this agency’s typical +3.9% (median of 10 sales)');
+  });
+});
+
+describe('price check block', () => {
+  const avm = { predicted_price: 785_000, predicted_price_low: 612_000, predicted_price_high: 958_000, prediction_date: '2026-07-01' };
+  const ag = { ...belvoir, asking_price: 800_000, likely_sale_price: 831_520 };
+  it('shows both numbers and the premium gap', () => {
+    const t = priceBlockEl(priceCheck(facts(ag, avm)))!.textContent!;
+    expect(t).toContain('Price check');
+    expect(t).toContain('Likely sale price · about $832k');
+    expect(t).toContain('Guide on record $800k + this agency’s typical +3.9% (10 sales)');
+    expect(t).toContain('Microburbs value · $785k');
+    expect(t).toContain('Model estimate from comparable sales · likely $612k–$958k · Jul 2026');
+    expect(t).toContain('Heading about $47k (6%) above Microburbs’ value');
+  });
+  it('flags a below-value gap and an in-line one', () => {
+    expect(priceBlockEl(priceCheck(facts(ag, { ...avm, predicted_price: 900_000 })))!.textContent).toContain('below Microburbs’ value');
+    expect(priceBlockEl(priceCheck(facts(ag, { ...avm, predicted_price: 830_000 })))!.textContent).toContain('In line with Microburbs’ value');
+  });
+  it('shows one row alone with no gap line', () => {
+    const only = priceBlockEl(priceCheck(facts(null, avm)))!;
+    expect(only.textContent).toContain('Microburbs value · $785k');
+    expect(only.textContent).not.toContain('Likely sale price');
+    expect(only.querySelector('[class^=pgap]')).toBeNull();
+    expect(priceBlockEl(priceCheck(facts(ag)))!.textContent).not.toContain('Microburbs value');
+    expect(priceBlockEl(priceCheck(facts(null)))).toBeNull();
   });
   it('prefers the agency likely sale price', () => {
     expect(priceEstimate(facts(belvoir, { predicted_price: 900_000 }))).toEqual({ price: 832_000, label: 'Based on this agency’s guide-vs-sold record', range: null });

@@ -21,7 +21,7 @@ describe('guide check card', () => {
   it('sits right after the agency card and owns the single guide input', () => {
     const host = mountCards(facts(AQ, AVM));
     const titles = [...host.querySelectorAll('section > h3')].map((e) => e.textContent);
-    expect(titles.slice(0, 3)).toEqual(['Agency quoting accuracy', TITLE, 'Microburbs value']);
+    expect(titles.slice(0, 3)).toEqual(['Agency quoting accuracy', TITLE, 'Microburbs value range']);
     expect(host.querySelectorAll('input').length).toBe(1);
     expect(host.querySelector('.card.offer label')?.textContent).toBe('Guide the agent told you (typed by you — we never read prices from the listing)');
   });

@@ -201,7 +201,12 @@ details.na-line b { font-weight: 600; color: var(--ink-2); }
 .price-block { padding: 2px 2px 10px; margin-bottom: 6px; border-bottom: 1px solid var(--line, rgba(0,0,0,.08)); }
 .price-block .kicker { font: 600 var(--t-xs)/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
 .price-block .price { margin-top: 6px; font: 500 var(--t-lg, 17px)/1.2 var(--serif); color: var(--ink-2, var(--ink)); }
-.price-block .price b { display: block; font: 650 34px/1.05 var(--serif); letter-spacing: -.02em; color: var(--ink); }
+.price-block .price b { font: 650 26px/1.05 var(--serif); letter-spacing: -.02em; color: var(--ink); }
+.price-block .prow { margin-top: 8px; }
+.price-block .prow.value b { color: var(--ink-2, var(--ink)); }
+.price-block .pgap { margin-top: 10px; padding: 6px 8px; border-radius: 6px; font-size: var(--t-sm); background: var(--line, rgba(0,0,0,.05)); color: var(--ink); }
+.price-block .pgap.above { border-left: 3px solid #c47a12; }
+.price-block .pgap.below { border-left: 3px solid #2f7d4f; }
 .price-block .psub { margin-top: 4px; font-size: var(--t-sm); color: var(--ink-3); }
 .card .aq-head { font-size: var(--t-lg, 17px); line-height: 1.25; }
 .card .cohort-pill { display: inline-block; margin-top: 8px; padding: 3px 9px; border-radius: 999px; font: 600 var(--t-xs)/1.4 var(--sans); background: var(--warn-wash); color: var(--warn); }

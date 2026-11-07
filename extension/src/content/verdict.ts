@@ -82,12 +82,76 @@ export function priceEstimate(facts: FactsResponse | null): PriceEstimate | null
   return null;
 }
 
-export function priceBlockEl(p: PriceEstimate): HTMLElement {
+export interface PriceCheck {
+  /** Agency-adjusted likely sale price with its working line. */
+  readonly likely: { readonly price: number; readonly sub: string } | null;
+  /** Microburbs automated value (AVM). */
+  readonly value: { readonly price: number; readonly low: number | null; readonly high: number | null; readonly date: string | null } | null;
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** "Jul 2026" from "2026-07-01"; the raw string when it is not ISO-like. */
+export function monthYear(s: string | null): string | null {
+  if (!s) return null;
+  const m = /^(\d{4})-(\d{2})/.exec(s);
+  return m && +m[2] >= 1 && +m[2] <= 12 ? `${MONTHS[+m[2] - 1]} ${m[1]}` : s;
+}
+
+/** Both sides of the price check: agency-adjusted likely price and Microburbs' model value. */
+export function priceCheck(facts: FactsResponse | null): PriceCheck {
+  const aq = facts?.facts.agentQuoting;
+  const q = aq?.available ? aq.data : null;
+  const ask = pickNumber(q, ['asking_price']);
+  const dev = pickNumber(q, ['median_deviation_pct', 'avg_gap_pct']);
+  const n = pickNumber(q, ['total_sales', 'n_sales', 'sample_size']);
+  let likelyPrice = pickNumber(q, ['likely_sale_price']);
+  if ((likelyPrice === null || likelyPrice <= 0) && ask !== null && ask > 0 && dev !== null) likelyPrice = Math.round(ask * (1 + dev / 100));
+  let likely: PriceCheck['likely'] = null;
+  if (likelyPrice !== null && likelyPrice > 0) {
+    const sales = n !== null && n > 0 ? ` (${Math.round(n)} sale${Math.round(n) === 1 ? '' : 's'})` : '';
+    const sub = ask !== null && ask > 0 && dev !== null
+      ? `Guide on record ${money(ask)} + this agency’s typical ${dev >= 0 ? '+' : '−'}${fmtPct(dev)}%${sales}`
+      : 'Based on this agency’s guide-vs-sold record';
+    likely = { price: likelyPrice, sub };
+  }
+  const avm = facts?.facts.avm;
+  const a = avm?.available ? avm.data : null;
+  const mid = pickNumber(a, ['predicted_price', 'value', 'estimate', 'mid']);
+  let value: PriceCheck['value'] = null;
+  if (mid !== null && mid > 0) {
+    const low = pickNumber(a, ['predicted_price_low', 'low', 'lower']);
+    const high = pickNumber(a, ['predicted_price_high', 'high', 'upper']);
+    const ok = low !== null && high !== null && high > low;
+    value = { price: mid, low: ok ? low : null, high: ok ? high : null, date: monthYear(pickString(a, ['prediction_date', 'date'])) };
+  }
+  return { likely, value };
+}
+
+/** The gap line between likely price and Microburbs value; null unless both exist. */
+export function priceGapLine(c: PriceCheck): string | null {
+  if (!c.likely || !c.value) return null;
+  const diff = c.likely.price - c.value.price;
+  const rel = diff / c.value.price;
+  const k = Math.abs(diff) >= 1_000_000 ? money(Math.abs(diff)) : `$${Math.round(Math.abs(diff) / 1000)}k`;
+  const amt = `about ${k} (${Math.round(Math.abs(rel) * 100)}%)`;
+  if (rel >= 0.03) return `Heading ${amt} above Microburbs’ value — that’s the premium if this agency runs true to form.`;
+  if (rel <= -0.03) return `Heading ${amt} below Microburbs’ value — a potential buying opportunity.`;
+  return 'In line with Microburbs’ value.';
+}
+
+export function priceBlockEl(c: PriceCheck): HTMLElement | null {
+  if (!c.likely && !c.value) return null;
+  const row = (cls: string, label: string, price: number, sub: string) =>
+    h('div', { class: `prow ${cls}` }, h('p', { class: 'price' }, `${label} · `, h('b', {}, `${cls === 'likely' ? 'about ' : ''}${money(price)}`)), h('p', { class: 'psub' }, sub));
+  const v = c.value;
+  const vSub = v ? ['Model estimate from comparable sales', v.low !== null && v.high !== null ? `likely ${money(v.low)}–${money(v.high)}` : null, v.date].filter(Boolean).join(' · ') : '';
+  const gap = priceGapLine(c);
+  const tone = !gap || !c.likely || !v ? '' : c.likely.price - v.price >= 0.03 * v.price ? ' above' : c.likely.price - v.price <= -0.03 * v.price ? ' below' : ' inline';
   return h('div', { class: 'price-block', role: 'status' },
-    h('p', { class: 'kicker' }, 'Estimated price'),
-    h('p', { class: 'price' }, 'Likely to sell for about ', h('b', {}, money(p.price))),
-    p.working ? h('p', { class: 'psub working' }, p.working) : null,
-    h('p', { class: 'psub' }, p.range ? `${p.label} · 80% range ${money(p.range.low)}–${money(p.range.high)}` : p.label));
+    h('p', { class: 'kicker' }, 'Price check'),
+    c.likely ? row('likely', 'Likely sale price', c.likely.price, c.likely.sub) : null,
+    v ? row('value', 'Microburbs value', v.price, vSub) : null,
+    gap ? h('p', { class: `pgap${tone}` }, gap) : null);
 }
 
 /** Verdict from the agency's guide-vs-sold record; null when there is none (most live homes). */
