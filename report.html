@@ -77,7 +77,7 @@
     <div class="callouts">
       <div><span class="big">0 of 30</span>real listings matched to the wrong home in our held-out check</div>
       <div><span class="big">15 of 20</span>listings with a findable unit or house matched exactly</div>
-      <div><span class="big">0 of 45</span>homes had agency quoting data, so we moved it to the bottom</div>
+      <div><span class="big">0 of 45</span>sampled homes (mostly not for sale) had agency quoting data. It does appear on live listings, e.g. 313/6 Belvoir St (McGrath, 10 tracked sales), so the panel shows it only when present</div>
     </div>
     <p>The hardest part was not the data. It was making sure the data belonged to the home on screen. Both portals keep the previous listing's data in the page after you click to the next one, so an extension that trusts it shows the wrong home. And many listing addresses (<code>C603/276</code>, <code>303N/16-20</code>, <code>188A</code>, a hidden unit) don't line up neatly with G-NAF.</p>
   </section>
@@ -288,7 +288,7 @@
   <section aria-labelledby="h-didnt">
     <h2 id="h-didnt">What did not work, and what remains uncertain</h2>
     <ul>
-      <li><strong>Agency quoting</strong> was our planned headline. It was available for 0 of 45 homes.</li>
+      <li><strong>Agency quoting</strong> was our planned headline. It was available for 0 of 45 sampled homes, because it only exists while a home is listed with a tracked agency. On live for-sale listings it does appear (313/6 Belvoir St: 7 of 10 McGrath sales above guide, median +3.9%), so it now shows when present and is skipped otherwise.</li>
       <li><strong>Valuation coverage is low</strong> (about 13%), so the value card is often missing.</li>
       <li><strong>Height controls can sit below existing towers.</strong> One unit at 417-419 Bourke St is in a 3 m height zone under a tower of about 63 m. We now flag that the building predates today's control instead of promising "up to 3 m".</li>
       <li><strong>OpenStreetMap heights are estimates</strong>, and some are missing. Where a height control is missing we estimate it from FSR and say so.</li>
