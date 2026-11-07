@@ -3,80 +3,98 @@
 Generated from `scripts/demo.beats.json` by `node build-scripts.ts`. Edit the JSON, not this file.
 Timings: measured voiceover (elevenlabs). Budget 180 s.
 
-**0:00.0 Title card** (2.5 s): Groundtruth · Chrome extension · built on the Microburbs API
+**0:00.0 Title card** (2 s): Groundtruth · Chrome extension · built on the Microburbs API
 
-## 0:02.5–0:16.4 · d01-price (planned , VO budget 16 s)
+## 0:02.0–0:12.8 · d01-intro (planned , VO budget 30 s)
 
-- **Voiceover:** Groundtruth is a Chrome extension for a City of Sydney buyer. On Belvoir Street it shows a likely sale about eight hundred thirty-two thousand against a Microburbs value seven hundred eighty-five, and the six percent gap.
-- **On screen:** REA 313/6 Belvoir St, Surry Hills: panel top shows "What it should sell for: about $832k" vs "Microburbs value $785k" and the gap line (+$46k, 6%).
-- **Caption:** Likely sale vs Microburbs value
+- **Voiceover:** This is Groundtruth, a Chrome extension that sits beside a realestate.com.au or Domain listing. Here's an apartment on Belvoir Street in Surry Hills.
+- **On screen:** s1 page load
+- **Caption:** **Chrome extension** · realestate.com.au + Domain
 
-## 0:16.4–0:24.9 · d02-receipt (planned , VO budget 12 s)
+## 0:12.8–0:25.1 · d02-price (planned , VO budget 30 s)
 
-- **Voiceover:** Tap Verified home. The address match receipt expands with the G‑NAF id and four of four checks, so we know it’s the exact home.
-- **On screen:** Same listing: clicking "Verified home" expands the address match receipt (address read, normalised, G-NAF id, 4/4 checks).
-- **Caption:** **Verified** address match receipt, G-NAF id
+- **Voiceover:** Up top, the price check. Microburbs values it at seven hundred and eighty-five thousand, but this agency's sales usually land above guide, so it's likely to go for about eight hundred and thirty.
+- **On screen:** s1 price check
+- **Caption:** Microburbs value $785k · likely **~$830k**
 
-## 0:24.9–0:33.9 · d03-guide (planned , VO budget 11 s)
+## 0:25.1–0:35.2 · d03-receipt (planned , VO budget 30 s)
 
-- **Voiceover:** Type a guide as a buyer. Nine hundred thousand against the eight hundred thousand on record, flagged fifteen percent above Microburbs’ estimate.
-- **On screen:** Same listing: buyer types a $900k guide; panel says it differs from the $800k guide on record and sits 15% above Microburbs' $785k estimate.
-- **Caption:** Typed guide, checked in place
+- **Voiceover:** How do we know it's the right home? Groundtruth reads only the address and shows its receipt: the exact unit, matched on unit, number, street and suburb.
+- **On screen:** s1 receipt
+- **Caption:** Address match receipt · **unit · number · street · suburb**
 
-## 0:33.9–0:41.6 · d04-agency (planned , VO budget 9 s)
+## 0:35.2–0:42.3 · d04-agency (planned , VO budget 30 s)
 
-- **Voiceover:** See the agency’s guide‑versus‑sold record: seven of ten sold above their guide, median plus three point nine percent.
-- **On screen:** Same listing: agency card "7 of 10 of this agency's recent sales sold above their guide", McGrath Surry Hills, median +3.9%.
-- **Caption:** Agency guide-vs-sold record
+- **Voiceover:** The agency card shows why. Seven of McGrath's last ten sales beat their guide, by about four percent.
+- **On screen:** s1 agency
+- **Caption:** McGrath: **7 of 10** sales beat guide · ~4%
 
-## 0:41.6–0:53.2 · d05-switch (planned , VO budget 14 s)
+## 0:42.3–0:52.8 · d05-guide (planned , VO budget 30 s)
 
-- **Voiceover:** Realestate dot com dot au switches listings in place. We jump from Goulburn Street, about one point three million, back to Bourke Street, and the receipt updates to the new home.
-- **On screen:** REA in-page navigation: search results -> 18/251-263 Goulburn St (about $1.3m) -> back -> 902/417-419 Bourke St; the receipt updates to the new home.
-- **Caption:** Works when REA switches listings
+- **Voiceover:** Been quoted a different number? Type it in. Nine hundred thousand is above both the guide on record and Microburbs' estimate, so it's worth asking the agent why.
+- **On screen:** s1 guide check
+- **Caption:** Type your guide · **$900k** vs record and estimate
 
-## 0:53.2–0:57.7 · d06-domain (planned , VO budget 7 s)
+## 0:52.8–1:00.6 · d06-switch (planned , VO budget 30 s)
 
-- **Voiceover:** On Domain, Groundtruth reads the address and shows an exact address match.
-- **On screen:** domain.com.au 405/82-92 Cooper St, Surry Hills: panel shows an exact address match.
-- **Caption:** Tested on 30 listings, 0 wrong homes
+- **Voiceover:** Browse normally. Click into another listing and the panel follows: Goulburn Street, then Bourke Street, each matched fresh.
+- **On screen:** s6 switch
+- **Caption:** Panel follows you · **each listing matched fresh**
 
-## 0:57.7–1:25.3 · d07-briefing (planned , VO budget 2 s)
+## 1:00.6–1:13.7 · d07-features (planned , VO budget 30 s)
 
-- **Voiceover:** (recorded briefing audio)
-- **On screen:** Same Domain listing: the 30-second spoken briefing plays (real recorded audio, captions in the panel). No narration over it: vo must be "".
-- **Caption:** 30-second briefing
+- **Voiceover:** Scroll down for what listings rarely mention. This Bourke Street apartment has heritage on the property, sits thirty-five metres from a high-voltage line, and its street is forecast to grow a little slower than Surry Hills.
+- **On screen:** feat 19–27
+- **Caption:** **Heritage on property** · HV line 35 m · street vs suburb
 
-## 1:25.3–1:31.8 · d08-3d (planned , VO budget 10 s)
+## 1:13.7–1:19.2 · d08-strata (planned , VO budget 30 s)
 
-- **Voiceover:** Here’s what can legally rise next door: two lots within one hundred metres could add four to five storeys.
-- **On screen:** REA 902/417-419 Bourke St: verdict "2 lots within 100 m could rise 4-5 more storeys", 3D map of the home tower with glass headroom volumes.
-- **Caption:** 3D what can rise next door
+- **Voiceover:** Strata levies in the suburb run about five thousand three hundred a year, worth budgeting for.
+- **On screen:** feat 27–33
+- **Caption:** Strata levy ~**$5,320/yr** suburb median
 
-## 1:31.8–1:41.5 · d10-risks (planned , VO budget 11 s)
+## 1:19.2–1:28.0 · d09-3d (planned , VO budget 30 s)
 
-- **Voiceover:** Risk overlays: heritage on the property; flood not on it, nearest four hundred forty‑three metres; and a high‑voltage line about thirty‑five metres away.
-- **On screen:** Same listing: Risk overlays card: bushfire clear; flood not on property (nearest 443 m); heritage ON property ("Heritage controls may limit renovations"); HV power line nearest 35 m.
-- **Caption:** Risks: heritage, flood, HV line
+- **Voiceover:** And this is the 3D view. Your building in blue, glass where neighbours are allowed to build higher. Two lots nearby could add four to five storeys.
+- **On screen:** s3d push-in
+- **Caption:** 3D: **2 lots could rise 4–5 storeys**
 
-## 1:41.5–1:53.8 · d11-street (planned , VO budget 13 s)
+## 1:28.0–1:32.6 · d10-domain (planned , VO budget 30 s)
 
-- **Voiceover:** Street versus suburb: growth forecast three point four versus three point six a year, past two point four versus two point six, renters forty‑one versus fifty‑eight. Mid‑pack.
-- **On screen:** REA 902/417-419 Bourke St: Street vs suburb card: growth forecast 3.4% vs 3.6%/yr (street vs suburb), past growth 2.4% vs 2.6%, renters 41% vs 58%, "Mid-pack".
-- **Caption:** Street vs suburb growth
+- **Voiceover:** It works on Domain too. Same panel, same exact match.
+- **On screen:** s7 Domain
+- **Caption:** **Domain** · same exact match
 
-## 1:53.8–2:03.5 · d12-strata (planned , VO budget 12 s)
+## 1:32.6–1:39.7 · d11-brief-intro (planned , VO budget 30 s)
 
-- **Voiceover:** Strata levy shown: five thousand three hundred twenty a year, one thousand three hundred thirty a quarter, the Surry Hills median across ninety‑seven buildings.
-- **On screen:** Same listing: Strata levy card: $5,320 a year, $1,330 a quarter, Surry Hills median across 97 buildings.
-- **Caption:** Strata levy, suburb median
+- **Voiceover:** Now the feature buyers love: the thirty-second briefing. Tap play and Groundtruth talks you through the home.
+- **On screen:** s7 zoom on briefing button
+- **Caption:** ▶ 30-sec briefing · tap to listen
 
-## 2:03.5–2:09.9 · d13-close (planned , VO budget 7 s)
+## 1:39.7–2:06.5 · d12-briefing (planned , VO budget 30 s)
 
-- **Voiceover:** Price and value stay side by side, powered by the Microburbs API. Groundtruth.
-- **On screen:** REA 313/6 Belvoir St, Surry Hills: panel top shows "What it should sell for: about $832k" vs "Microburbs value $785k" and the gap line (+$46k, 6%).
-- **Caption:** Powered by Microburbs API
+- **Voiceover:** (Briefing audio, ElevenLabs Sarah, text = captions shown in the panel.)
+- **On screen:** s7 briefing
+- **Caption:** Spoken briefing · captions in the panel
 
-**2:09.9 End card** (3 s): Groundtruth · Built on the Microburbs API · github.com/chunghaw/groundtruth
+## 2:06.5–2:13.9 · d13-hidden-unit (planned , VO budget 30 s)
 
-**Total ≈ 2:12.9** (limit 3:00.0)
+- **Voiceover:** If a listing hides the unit number, Groundtruth won't guess. It asks how many bedrooms and narrows the building.
+- **On screen:** demo page building
+- **Caption:** Hidden unit · tap **bedrooms** to narrow
+
+## 2:13.9–2:18.2 · d14-out-of-area (planned , VO budget 30 s)
+
+- **Voiceover:** Outside the City of Sydney, it tells you plainly and stays quiet.
+- **On screen:** demo page Bondi
+- **Caption:** Out of area · **no data call**
+
+## 2:18.2–2:23.9 · d15-end (planned , VO budget 30 s)
+
+- **Voiceover:** Groundtruth. Built on the Microburbs API, and ready to drop into any property extension.
+- **On screen:** s6 Bourke St
+- **Caption:** Built on the **Microburbs API**
+
+**2:23.9 End card** (2.5 s): Groundtruth · Built on the Microburbs API · github.com/chunghaw/groundtruth
+
+**Total ≈ 2:26.4** (limit 3:00.0)

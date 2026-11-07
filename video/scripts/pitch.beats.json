@@ -3,62 +3,56 @@
   "title": "Groundtruth: 45-second pitch",
   "maxTotalSec": 45,
   "titleSec": 0,
-  "endSec": 0.7,
-  "tailPadSec": 0.0,
+  "endSec": 1.0,
+  "tailPadSec": 0.15,
   "beats": [
     {
       "id": "p1-hook",
       "window": "",
-      "maxSec": 9,
-      "vo": "Every listing tells the seller's story. Groundtruth tells the home's, right beside it, as a Chrome extension.",
-      "caption": "Groundtruth · a [[Chrome extension]] beside the listing",
-      "action": "s1:price",
-      "shot": "s1:price"
+      "maxSec": 30,
+      "vo": "House hunting in Sydney? Every listing tells you the seller's story. Groundtruth tells you the home's, right beside the listing.",
+      "caption": "Groundtruth · right beside the listing",
+      "action": "s1 price check"
     },
     {
       "id": "p2-receipt",
       "window": "",
-      "maxSec": 9,
-      "vo": "It reads only the address, matches the exact G-NAF home, and shows the receipt. Thirty real listings, zero wrong homes.",
-      "caption": "Verified home · 4/4 checks · [[0 wrong homes]] in 30 listings",
-      "action": "s1:receipt",
-      "shot": "s1:receipt"
+      "maxSec": 30,
+      "vo": "It reads just the address and pins the exact apartment, so every fact belongs to this home.",
+      "caption": "[[Exact home]] from the address alone",
+      "action": "s1 receipt"
     },
     {
-      "id": "p3-money",
+      "id": "p3-price",
       "window": "",
-      "maxSec": 9,
-      "vo": "This agency usually sells three point nine percent over guide, so this one's heading for about eight hundred and thirty-two thousand, forty-six thousand above Microburbs' value.",
-      "caption": "Agency [[+3.9% over guide]] · likely ~$832k vs $785k value",
-      "action": "s1:agency",
-      "shot": "s1:agency"
+      "maxSec": 30,
+      "vo": "First, price. This agency usually sells about four percent over guide, so expect around eight hundred and thirty thousand, not eight hundred.",
+      "caption": "Agency ~4% over guide · expect [[~$830k]]",
+      "action": "s1 agency + price"
     },
     {
       "id": "p4-features",
       "window": "",
-      "maxSec": 9,
-      "vo": "Street versus suburb growth. Heritage on the property. A high-voltage line thirty-five metres away. Things you'd only find after paying for searches.",
+      "maxSec": 30,
+      "vo": "Then what the listing leaves out: heritage on the property, a high-voltage line thirty-five metres away, and how the street grows against the suburb.",
       "caption": "[[Heritage on property]] · HV line 35 m · street vs suburb",
-      "action": "feat:street",
-      "shot": "feat:street"
+      "action": "feat 19–27"
     },
     {
-      "id": "p5-next-door",
+      "id": "p5-3d",
       "window": "",
-      "maxSec": 9,
-      "vo": "And what can legally rise next door: two lots within a hundred metres could add four to five storeys.",
-      "caption": "2 lots could rise [[4–5 storeys]] next door",
-      "action": "s3d",
-      "shot": "s3d"
+      "maxSec": 30,
+      "vo": "And in 3D, what's allowed to rise next door.",
+      "caption": "What can [[legally rise next door]]",
+      "action": "layers 3D push-in"
     },
     {
-      "id": "p6-close",
+      "id": "p6-briefing",
       "window": "",
-      "maxSec": 9,
-      "vo": "Works on realestate.com.au and Domain. Built on the Microburbs API. We're Groundtruth.",
-      "caption": "realestate.com.au + Domain · built on the [[Microburbs API]]",
-      "action": "s7:domain",
-      "shot": "s7:domain"
+      "maxSec": 30,
+      "vo": "Tap play for a thirty-second spoken briefing on the way to the inspection. Groundtruth, built on the Microburbs API.",
+      "caption": "▶ 30-sec briefing · tap to listen",
+      "action": "s7 briefing (no briefing audio)"
     }
   ]
 }

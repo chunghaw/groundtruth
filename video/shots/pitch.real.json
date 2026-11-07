@@ -12,7 +12,7 @@
       "len": 0,
       "crop": "1440:810:480:250"
     },
-    "p3-money": {
+    "p3-price": {
       "file": "out/real/s1.mp4",
       "ss": 37,
       "len": 0,
@@ -24,16 +24,16 @@
       "len": 0,
       "crop": "1440:810:480:250"
     },
-    "p5-next-door": {
+    "p5-3d": {
       "file": "out/real/layers-push.mp4",
       "ss": 0,
       "len": 0
     },
-    "p6-close": {
+    "p6-briefing": {
       "file": "out/real/s7.mp4",
-      "ss": 5,
+      "ss": 203,
       "len": 0,
-      "crop": "1600:900:320:172"
+      "crop": "1440:810:480:250"
     }
   }
 }

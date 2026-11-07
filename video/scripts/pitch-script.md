@@ -5,42 +5,42 @@ Timings: measured voiceover (elevenlabs). Budget 45 s.
 
 **0:00.0 Title card** (0 s): Groundtruth · Chrome extension · built on the Microburbs API
 
-## 0:00.0–0:05.9 · p1-hook (planned , VO budget 9 s)
+## 0:00.0–0:07.7 · p1-hook (planned , VO budget 30 s)
 
-- **Voiceover:** Every listing tells the seller's story. Groundtruth tells the home's, right beside it, as a Chrome extension.
-- **On screen:** s1:price
-- **Caption:** Groundtruth · a **Chrome extension** beside the listing
+- **Voiceover:** House hunting in Sydney? Every listing tells you the seller's story. Groundtruth tells you the home's, right beside the listing.
+- **On screen:** s1 price check
+- **Caption:** Groundtruth · right beside the listing
 
-## 0:05.9–0:13.7 · p2-receipt (planned , VO budget 9 s)
+## 0:07.7–0:13.7 · p2-receipt (planned , VO budget 30 s)
 
-- **Voiceover:** It reads only the address, matches the exact G-NAF home, and shows the receipt. Thirty real listings, zero wrong homes.
-- **On screen:** s1:receipt
-- **Caption:** Verified home · 4/4 checks · **0 wrong homes** in 30 listings
+- **Voiceover:** It reads just the address and pins the exact apartment, so every fact belongs to this home.
+- **On screen:** s1 receipt
+- **Caption:** **Exact home** from the address alone
 
-## 0:13.7–0:23.3 · p3-money (planned , VO budget 9 s)
+## 0:13.7–0:22.6 · p3-price (planned , VO budget 30 s)
 
-- **Voiceover:** This agency usually sells three point nine percent over guide, so this one's heading for about eight hundred and thirty-two thousand, forty-six thousand above Microburbs' value.
-- **On screen:** s1:agency
-- **Caption:** Agency **+3.9% over guide** · likely ~$832k vs $785k value
+- **Voiceover:** First, price. This agency usually sells about four percent over guide, so expect around eight hundred and thirty thousand, not eight hundred.
+- **On screen:** s1 agency + price
+- **Caption:** Agency ~4% over guide · expect **~$830k**
 
-## 0:23.3–0:31.8 · p4-features (planned , VO budget 9 s)
+## 0:22.6–0:31.6 · p4-features (planned , VO budget 30 s)
 
-- **Voiceover:** Street versus suburb growth. Heritage on the property. A high-voltage line thirty-five metres away. Things you'd only find after paying for searches.
-- **On screen:** feat:street
+- **Voiceover:** Then what the listing leaves out: heritage on the property, a high-voltage line thirty-five metres away, and how the street grows against the suburb.
+- **On screen:** feat 19–27
 - **Caption:** **Heritage on property** · HV line 35 m · street vs suburb
 
-## 0:31.8–0:37.5 · p5-next-door (planned , VO budget 9 s)
+## 0:31.6–0:34.9 · p5-3d (planned , VO budget 30 s)
 
-- **Voiceover:** And what can legally rise next door: two lots within a hundred metres could add four to five storeys.
-- **On screen:** s3d
-- **Caption:** 2 lots could rise **4–5 storeys** next door
+- **Voiceover:** And in 3D, what's allowed to rise next door.
+- **On screen:** layers 3D push-in
+- **Caption:** What can **legally rise next door**
 
-## 0:37.5–0:43.9 · p6-close (planned , VO budget 9 s)
+## 0:34.9–0:42.2 · p6-briefing (planned , VO budget 30 s)
 
-- **Voiceover:** Works on realestate.com.au and Domain. Built on the Microburbs API. We're Groundtruth.
-- **On screen:** s7:domain
-- **Caption:** realestate.com.au + Domain · built on the **Microburbs API**
+- **Voiceover:** Tap play for a thirty-second spoken briefing on the way to the inspection. Groundtruth, built on the Microburbs API.
+- **On screen:** s7 briefing (no briefing audio)
+- **Caption:** ▶ 30-sec briefing · tap to listen
 
-**0:43.9 End card** (0.7 s): Groundtruth · Built on the Microburbs API · github.com/chunghaw/groundtruth
+**0:42.2 End card** (1 s): Groundtruth · Built on the Microburbs API · github.com/chunghaw/groundtruth
 
-**Total ≈ 0:44.6** (limit 0:45.0)
+**Total ≈ 0:43.2** (limit 0:45.0)

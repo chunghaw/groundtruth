@@ -1,20 +1,20 @@
 {
   "beats": {
-    "d01-price": {
+    "d01-intro": {
       "file": "out/real/s1.mp4",
-      "ss": 4,
+      "ss": 3,
+      "len": 0,
+      "crop": "1600:900:320:172"
+    },
+    "d02-price": {
+      "file": "out/real/s1.mp4",
+      "ss": 13,
       "len": 0,
       "crop": "1440:810:480:250"
     },
-    "d02-receipt": {
+    "d03-receipt": {
       "file": "out/real/s1.mp4",
       "ss": 25.5,
-      "len": 0,
-      "crop": "1440:810:480:250"
-    },
-    "d03-guide": {
-      "file": "out/real/s1.mp4",
-      "ss": 86,
       "len": 0,
       "crop": "1440:810:480:250"
     },
@@ -24,57 +24,68 @@
       "len": 0,
       "crop": "1440:810:480:250"
     },
-    "d05-switch": {
+    "d05-guide": {
+      "file": "out/real/s1.mp4",
+      "ss": 86,
+      "len": 0,
+      "crop": "1440:810:480:250"
+    },
+    "d06-switch": {
       "file": "out/real/s6.mp4",
       "ss": 19,
       "len": 17,
       "crop": "1600:900:320:172"
     },
-    "d06-domain": {
-      "file": "out/real/s7.mp4",
-      "ss": 5,
-      "len": 0,
-      "crop": "1600:900:320:172"
-    },
-    "d07-briefing": {
-      "file": "out/real/s7.mp4",
-      "ss": 203,
-      "len": 27.6,
-      "crop": "1440:810:480:250"
-    },
-    "d08-3d": {
-      "file": "out/real/s3d-demo.mp4",
-      "ss": 0,
-      "len": 0
-    },
-    "d10-risks": {
-      "file": "out/real/feat.mp4",
-      "ss": 21,
-      "len": 0,
-      "crop": "1440:810:480:250"
-    },
-    "d11-street": {
+    "d07-features": {
       "file": "out/real/feat.mp4",
       "ss": 19,
       "len": 0,
       "crop": "1440:810:480:250"
     },
-    "d12-strata": {
+    "d08-strata": {
       "file": "out/real/feat.mp4",
       "ss": 27,
       "len": 0,
       "crop": "1440:810:480:250"
     },
-    "d13-close": {
-      "file": "out/real/s1.mp4",
-      "ss": 13,
+    "d09-3d": {
+      "file": "out/real/s3d-demo.mp4",
+      "ss": 0,
+      "len": 0
+    },
+    "d10-domain": {
+      "file": "out/real/s7.mp4",
+      "ss": 5,
+      "len": 0,
+      "crop": "1600:900:320:172"
+    },
+    "d11-brief-intro": {
+      "file": "out/real/s7.mp4",
+      "ss": 192,
+      "len": 0,
+      "crop": "800:450:1120:200"
+    },
+    "d12-briefing": {
+      "file": "out/real/s7.mp4",
+      "ss": 203,
       "len": 0,
       "crop": "1440:810:480:250"
     },
-    "d08b-layers": {
-      "file": "out/real/layers-push.mp4",
+    "d13-hidden-unit": {
+      "file": "out/demo/clips/d06-hidden-unit/frames.ffconcat",
       "ss": 0,
-      "len": 10
+      "len": 0
+    },
+    "d14-out-of-area": {
+      "file": "out/demo/clips/d07-out-of-area/frames.ffconcat",
+      "ss": 0,
+      "len": 0
+    },
+    "d15-end": {
+      "file": "out/real/s6.mp4",
+      "ss": 34,
+      "len": 0,
+      "crop": "1600:900:320:172"
     }
   }
 }

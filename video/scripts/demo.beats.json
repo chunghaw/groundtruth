@@ -2,118 +2,130 @@
   "deck": "demo",
   "title": "Groundtruth: demo",
   "maxTotalSec": 180,
-  "titleSec": 2.5,
-  "endSec": 3,
+  "titleSec": 2.0,
+  "endSec": 2.5,
   "tailPadSec": 0.3,
   "beats": [
     {
-      "id": "d01-price",
+      "id": "d01-intro",
       "window": "",
-      "maxSec": 16,
-      "vo": "Groundtruth is a Chrome extension for a City of Sydney buyer. On Belvoir Street it shows a likely sale about eight hundred thirty-two thousand against a Microburbs value seven hundred eighty-five, and the six percent gap.",
-      "caption": "Likely sale vs Microburbs value",
-      "action": "REA 313/6 Belvoir St, Surry Hills: panel top shows \"What it should sell for: about $832k\" vs \"Microburbs value $785k\" and the gap line (+$46k, 6%).",
-      "shot": "s1:price"
+      "maxSec": 30,
+      "vo": "This is Groundtruth, a Chrome extension that sits beside a realestate.com.au or Domain listing. Here's an apartment on Belvoir Street in Surry Hills.",
+      "caption": "[[Chrome extension]] · realestate.com.au + Domain",
+      "action": "s1 page load"
     },
     {
-      "id": "d02-receipt",
+      "id": "d02-price",
       "window": "",
-      "maxSec": 12,
-      "vo": "Tap Verified home. The address match receipt expands with the G‑NAF id and four of four checks, so we know it’s the exact home.",
-      "caption": "[[Verified]] address match receipt, G-NAF id",
-      "action": "Same listing: clicking \"Verified home\" expands the address match receipt (address read, normalised, G-NAF id, 4/4 checks).",
-      "shot": "s1:receipt"
+      "maxSec": 30,
+      "vo": "Up top, the price check. Microburbs values it at seven hundred and eighty-five thousand, but this agency's sales usually land above guide, so it's likely to go for about eight hundred and thirty.",
+      "caption": "Microburbs value $785k · likely [[~$830k]]",
+      "action": "s1 price check"
     },
     {
-      "id": "d03-guide",
+      "id": "d03-receipt",
       "window": "",
-      "maxSec": 11,
-      "vo": "Type a guide as a buyer. Nine hundred thousand against the eight hundred thousand on record, flagged fifteen percent above Microburbs’ estimate.",
-      "caption": "Typed guide, checked in place",
-      "action": "Same listing: buyer types a $900k guide; panel says it differs from the $800k guide on record and sits 15% above Microburbs' $785k estimate.",
-      "shot": "s1:guide"
+      "maxSec": 30,
+      "vo": "How do we know it's the right home? Groundtruth reads only the address and shows its receipt: the exact unit, matched on unit, number, street and suburb.",
+      "caption": "Address match receipt · [[unit · number · street · suburb]]",
+      "action": "s1 receipt"
     },
     {
       "id": "d04-agency",
       "window": "",
-      "maxSec": 9,
-      "vo": "See the agency’s guide‑versus‑sold record: seven of ten sold above their guide, median plus three point nine percent.",
-      "caption": "Agency guide-vs-sold record",
-      "action": "Same listing: agency card \"7 of 10 of this agency's recent sales sold above their guide\", McGrath Surry Hills, median +3.9%.",
-      "shot": "s1:agency"
+      "maxSec": 30,
+      "vo": "The agency card shows why. Seven of McGrath's last ten sales beat their guide, by about four percent.",
+      "caption": "McGrath: [[7 of 10]] sales beat guide · ~4%",
+      "action": "s1 agency"
     },
     {
-      "id": "d05-switch",
+      "id": "d05-guide",
       "window": "",
-      "maxSec": 14,
-      "vo": "Realestate dot com dot au switches listings in place. We jump from Goulburn Street, about one point three million, back to Bourke Street, and the receipt updates to the new home.",
-      "caption": "Works when REA switches listings",
-      "action": "REA in-page navigation: search results -> 18/251-263 Goulburn St (about $1.3m) -> back -> 902/417-419 Bourke St; the receipt updates to the new home.",
-      "shot": "s6:switch"
+      "maxSec": 30,
+      "vo": "Been quoted a different number? Type it in. Nine hundred thousand is above both the guide on record and Microburbs' estimate, so it's worth asking the agent why.",
+      "caption": "Type your guide · [[$900k]] vs record and estimate",
+      "action": "s1 guide check"
     },
     {
-      "id": "d06-domain",
+      "id": "d06-switch",
       "window": "",
-      "maxSec": 7,
-      "vo": "On Domain, Groundtruth reads the address and shows an exact address match.",
-      "caption": "Tested on 30 listings, 0 wrong homes",
-      "action": "domain.com.au 405/82-92 Cooper St, Surry Hills: panel shows an exact address match.",
-      "shot": "s7:domain"
+      "maxSec": 30,
+      "vo": "Browse normally. Click into another listing and the panel follows: Goulburn Street, then Bourke Street, each matched fresh.",
+      "caption": "Panel follows you · [[each listing matched fresh]]",
+      "action": "s6 switch"
     },
     {
-      "id": "d07-briefing",
+      "id": "d07-features",
       "window": "",
-      "maxSec": 2,
-      "vo": "(recorded briefing audio)",
-      "caption": "30-second briefing",
-      "action": "Same Domain listing: the 30-second spoken briefing plays (real recorded audio, captions in the panel). No narration over it: vo must be \"\".",
-      "shot": "s7:briefing",
-      "audio": "out/real/brief-cooper.mp3"
+      "maxSec": 30,
+      "vo": "Scroll down for what listings rarely mention. This Bourke Street apartment has heritage on the property, sits thirty-five metres from a high-voltage line, and its street is forecast to grow a little slower than Surry Hills.",
+      "caption": "[[Heritage on property]] · HV line 35 m · street vs suburb",
+      "action": "feat 19–27"
     },
     {
-      "id": "d08-3d",
+      "id": "d08-strata",
       "window": "",
-      "maxSec": 10,
-      "vo": "Here’s what can legally rise next door: two lots within one hundred metres could add four to five storeys.",
-      "caption": "3D what can rise next door",
-      "action": "REA 902/417-419 Bourke St: verdict \"2 lots within 100 m could rise 4-5 more storeys\", 3D map of the home tower with glass headroom volumes.",
-      "shot": "s3d"
+      "maxSec": 30,
+      "vo": "Strata levies in the suburb run about five thousand three hundred a year, worth budgeting for.",
+      "caption": "Strata levy ~[[$5,320/yr]] suburb median",
+      "action": "feat 27–33"
     },
     {
-      "id": "d10-risks",
+      "id": "d09-3d",
       "window": "",
-      "maxSec": 11,
-      "vo": "Risk overlays: heritage on the property; flood not on it, nearest four hundred forty‑three metres; and a high‑voltage line about thirty‑five metres away.",
-      "caption": "Risks: heritage, flood, HV line",
-      "action": "Same listing: Risk overlays card: bushfire clear; flood not on property (nearest 443 m); heritage ON property (\"Heritage controls may limit renovations\"); HV power line nearest 35 m.",
-      "shot": "feat:risks"
+      "maxSec": 30,
+      "vo": "And this is the 3D view. Your building in blue, glass where neighbours are allowed to build higher. Two lots nearby could add four to five storeys.",
+      "caption": "3D: [[2 lots could rise 4–5 storeys]]",
+      "action": "s3d push-in"
     },
     {
-      "id": "d11-street",
+      "id": "d10-domain",
       "window": "",
-      "maxSec": 13,
-      "vo": "Street versus suburb: growth forecast three point four versus three point six a year, past two point four versus two point six, renters forty‑one versus fifty‑eight. Mid‑pack.",
-      "caption": "Street vs suburb growth",
-      "action": "REA 902/417-419 Bourke St: Street vs suburb card: growth forecast 3.4% vs 3.6%/yr (street vs suburb), past growth 2.4% vs 2.6%, renters 41% vs 58%, \"Mid-pack\".",
-      "shot": "feat:street"
+      "maxSec": 30,
+      "vo": "It works on Domain too. Same panel, same exact match.",
+      "caption": "[[Domain]] · same exact match",
+      "action": "s7 Domain"
     },
     {
-      "id": "d12-strata",
+      "id": "d11-brief-intro",
       "window": "",
-      "maxSec": 12,
-      "vo": "Strata levy shown: five thousand three hundred twenty a year, one thousand three hundred thirty a quarter, the Surry Hills median across ninety‑seven buildings.",
-      "caption": "Strata levy, suburb median",
-      "action": "Same listing: Strata levy card: $5,320 a year, $1,330 a quarter, Surry Hills median across 97 buildings.",
-      "shot": "feat:strata"
+      "maxSec": 30,
+      "vo": "Now the feature buyers love: the thirty-second briefing. Tap play and Groundtruth talks you through the home.",
+      "caption": "▶ 30-sec briefing · tap to listen",
+      "action": "s7 zoom on briefing button"
     },
     {
-      "id": "d13-close",
+      "id": "d12-briefing",
       "window": "",
-      "maxSec": 7,
-      "vo": "Price and value stay side by side, powered by the Microburbs API. Groundtruth.",
-      "caption": "Powered by Microburbs API",
-      "action": "REA 313/6 Belvoir St, Surry Hills: panel top shows \"What it should sell for: about $832k\" vs \"Microburbs value $785k\" and the gap line (+$46k, 6%).",
-      "shot": "s1:price"
+      "maxSec": 30,
+      "vo": "(Briefing audio, ElevenLabs Sarah, text = captions shown in the panel.)",
+      "caption": "Spoken briefing · captions in the panel",
+      "action": "s7 briefing",
+      "audio": "out/real/brief-sarah.mp3"
+    },
+    {
+      "id": "d13-hidden-unit",
+      "window": "",
+      "maxSec": 30,
+      "vo": "If a listing hides the unit number, Groundtruth won't guess. It asks how many bedrooms and narrows the building.",
+      "caption": "Hidden unit · tap [[bedrooms]] to narrow",
+      "action": "demo page building"
+    },
+    {
+      "id": "d14-out-of-area",
+      "window": "",
+      "maxSec": 30,
+      "vo": "Outside the City of Sydney, it tells you plainly and stays quiet.",
+      "caption": "Out of area · [[no data call]]",
+      "action": "demo page Bondi"
+    },
+    {
+      "id": "d15-end",
+      "window": "",
+      "maxSec": 30,
+      "vo": "Groundtruth. Built on the Microburbs API, and ready to drop into any property extension.",
+      "caption": "Built on the [[Microburbs API]]",
+      "action": "s6 Bourke St"
     }
   ]
 }
