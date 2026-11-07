@@ -121,9 +121,9 @@ header.top {
 .receipt.NO_MATCH .seal, .receipt.ERROR .seal { background: var(--bad); }
 .receipt.LOADING .seal { background: var(--ink-4); animation: gt-pulse 1s ease-in-out infinite; }
 .receipt .who { min-width: 0; display: grid; gap: 1px; }
-.receipt .who b { font: 600 var(--t-sm)/1.2 var(--sans); color: var(--ink); }
+.receipt .who b { font: 600 var(--t-sm)/1.2 var(--sans); color: var(--ink); white-space: nowrap; }
 .receipt .who span { font: 11px/1.3 var(--mono); color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.receipt .meta { font: 600 11px/1 var(--sans); color: var(--ink-3); white-space: nowrap; }
+.receipt .meta { font: 600 11px/1.3 var(--sans); color: var(--ink-3); white-space: normal; text-align: right; max-width: 132px; }
 .receipt.EXACT { border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); background: var(--ok-wash); }
 .receipt.EXACT .meta { color: var(--ok); }
 .receipt .chev { width: 8px; height: 8px; border-right: 1.5px solid var(--ink-3); border-bottom: 1.5px solid var(--ink-3); transform: rotate(45deg) translate(-2px, -2px); transition: transform var(--dur) var(--ease); }
