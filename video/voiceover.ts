@@ -18,6 +18,7 @@ const apiKey = env('ELEVENLABS_API_KEY');
 const GEORGE_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb'; // ElevenLabs premade voice "George"
 const voiceId = env('ELEVENLABS_VOICE_ID') ?? (apiKey ? GEORGE_VOICE_ID : undefined);
 const modelId = env('ELEVENLABS_MODEL_ID') ?? 'eleven_multilingual_v2';
+const VOICE_SETTINGS = { stability: 0.4, similarity_boost: 0.8, style: 0.35, use_speaker_boost: true };
 const engine: 'elevenlabs' | 'say' = !flag('say') && apiKey && voiceId ? 'elevenlabs' : 'say';
 const sayVoice = pickSayVoice();
 
@@ -47,7 +48,7 @@ async function elevenlabs(text: string, file: string): Promise<void> {
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId!)}?output_format=mp3_44100_128`, {
     method: 'POST',
     headers: { 'xi-api-key': apiKey!, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
-    body: JSON.stringify({ text, model_id: modelId, voice_settings: { stability: 0.45, similarity_boost: 0.8, style: 0.15, use_speaker_boost: true } }),
+    body: JSON.stringify({ text, model_id: modelId, voice_settings: VOICE_SETTINGS }),
   });
   if (!res.ok) {
     const body = (await res.text()).slice(0, 300);
@@ -73,7 +74,7 @@ for (const beat of deck.beats) {
     result[beat.id] = { file, durationSec, text: '(recorded audio)' };
     continue;
   }
-  const key = createHash('sha256').update([engine, voiceId ?? sayVoice ?? '', modelId, text].join('|')).digest('hex').slice(0, 16);
+  const key = createHash('sha256').update([engine, voiceId ?? sayVoice ?? '', modelId, JSON.stringify(VOICE_SETTINGS), text].join('|')).digest('hex').slice(0, 16);
   const file = join(voDir, `${key}.${engine === 'elevenlabs' ? 'mp3' : 'aiff'}`);
   if (!existsSync(file) || flag('force')) {
     process.stdout.write(`  synth ${beat.id} (${engine})… `);
