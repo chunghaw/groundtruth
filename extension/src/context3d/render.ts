@@ -33,11 +33,11 @@ export const COLORS = {
 
 const BASEMAP_URL = 'https://tiles.openfreemap.org/styles/positron';
 const BASEMAP_TIMEOUT_MS = 3000;
-const OSM_ATTRIBUTION = '© OpenMapTiles © OpenStreetMap contributors';
+const OSM_ATTRIBUTION = 'OpenFreeMap © OpenMapTiles © OpenStreetMap contributors';
 const GHOST_OPACITY = 0.68;
 const VIEW = { zoom: 16.25, pitch: 58 } as const;
 /** Basemap layers kept (muted); everything else (POIs, place labels, shields, flat buildings) goes. */
-const KEEP = /^(background|park|water|landuse_residential|landcover_wood|highway_(minor|major_casing|major_inner|major_subtle|motorway_.*)|railway.*|highway-name-major)$/;
+const KEEP = /^(background|park|water|landuse_residential|landcover_wood|highway_(minor|major_casing|major_inner|major_subtle|motorway_.*)|railway.*|highway-name-(major|minor))$/;
 
 export interface RenderOptions {
   readonly workerUrl: string;
@@ -65,7 +65,7 @@ export function modelStyle(base: Style): Style {
     const paint = { ...(l.paint ?? {}), ...(tint[l.id] ?? {}) };
     if (l.type === 'line' && /highway_(minor|major_inner|major_subtle)/.test(l.id)) paint['line-color'] = COLORS.street;
     if (l.type === 'line' && /casing/.test(l.id)) paint['line-color'] = '#ddd5c4';
-    if (l.id === 'highway-name-major') paint['text-color'] = '#7a7465';
+    if (l.id === 'highway-name-major' || l.id === 'highway-name-minor') paint['text-color'] = '#7a7465';
     return { ...l, paint } as Layer;
   });
   layers.push({
