@@ -1,6 +1,6 @@
 {
   "vars": {
-    "REA_EASY_URL": "REPLACE_ME https://www.realestate.com.au/property-..."
+    "REA_UNIT_URL": "https://www.realestate.com.au/property-apartment-nsw-surry+hills-152864656"
   },
   "viewport": {
     "width": 1280,
@@ -10,14 +10,13 @@
   "extension": true,
   "blockers": [
     "#onetrust-banner-sdk",
-    "#onetrust-consent-sdk .ot-sdk-container",
     "[aria-label*='cookie' i][role='dialog']",
     "[class*='CookieBanner']"
   ],
   "init": [
     {
       "do": "goto",
-      "url": "{{REA_EASY_URL}}"
+      "url": "{{REA_UNIT_URL}}"
     },
     {
       "do": "waitPanel",
@@ -30,89 +29,88 @@
       "setup": [
         {
           "do": "goto",
-          "url": "{{REA_EASY_URL}}"
+          "url": "{{REA_UNIT_URL}}"
         },
         {
           "do": "waitPanel",
           "selector": ".pill.EXACT",
-          "timeout": 25000
-        },
-        {
-          "do": "waitPanel",
-          "selector": "section[aria-label='Agency quoting accuracy']",
-          "timeout": 25000
+          "timeout": 30000
         }
       ],
       "show": [
         {
-          "do": "pause",
-          "ms": 600
-        },
-        {
-          "do": "scrollPanelTo",
-          "selector": "section[aria-label='Agency quoting accuracy']",
-          "block": "start",
-          "at": 4.0
+          "do": "hoverPanel",
+          "selector": "section.receipt button.strip",
+          "at": 1.5
         }
       ]
     },
     "p2-receipt": {
       "crop": "1280:720:640:90",
-      "setup": [
-        {
-          "do": "scrollPanelTo",
-          "selector": "section.receipt"
-        }
-      ],
       "show": [
         {
           "do": "clickPanel",
-          "selector": "section.receipt:not(.open) .strip",
-          "optional": true,
-          "timeout": 400
-        },
-        {
-          "do": "hoverPanel",
-          "selector": "section.receipt dl dd:nth-of-type(1)"
-        },
-        {
-          "do": "hoverPanel",
-          "selector": "section.receipt dl dd:nth-of-type(4)",
-          "at": 2.8
-        },
-        {
-          "do": "hoverPanel",
-          "selector": "section.receipt .checks",
-          "optional": true,
-          "at": 4.6
-        }
-      ]
-    },
-    "p3-underquote": {
-      "crop": "1280:720:640:90",
-      "setup": [],
-      "show": [
-        {
-          "do": "scrollPanelTo",
-          "selector": "section[aria-label='Agency quoting accuracy']"
-        },
-        {
-          "do": "hoverPanel",
-          "selector": "section[aria-label='Agency quoting accuracy'] .big"
-        },
-        {
-          "do": "scrollPanelTo",
-          "selector": "section[aria-label='Realistic budget'], section[aria-label='Microburbs value']",
-          "at": 4.2
-        },
-        {
-          "do": "typePanel",
-          "selector": "#gt-guide, input[aria-label='Guide price you were quoted']",
-          "text": "$1.1m"
+          "selector": "section.receipt button.strip",
+          "at": 0.3
         },
         {
           "do": "waitPanel",
-          "selector": ".offer-pill, .guide-verdict.below, .guide-verdict.above, .guide-verdict.inside"
+          "selector": "section.receipt.open"
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt .rbody dd:nth-of-type(1)",
+          "at": 2.3
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt .rbody dd:nth-of-type(3)",
+          "at": 4.3
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt .rbody dd:nth-of-type(4)",
+          "at": 6.3
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt .rbody dd.checks",
+          "at": 8.3,
+          "optional": true
+        }
+      ]
+    },
+    "p3-next-door": {
+      "show": [
+        {
+          "do": "scrollPanelTo",
+          "selector": "section.card.c3",
+          "block": "start",
+          "at": 0.3
+        },
+        {
+          "do": "waitPanel",
+          "selector": "section.card.c3 .c3-lead",
+          "timeout": 20000,
+          "optional": true
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.card.c3 .c3-stage",
+          "at": 3.3,
+          "optional": true
+        },
+        {
+          "do": "clickPanel",
+          "selector": "section.card.c3 .c3-segs button.c3-seg",
+          "at": 7.3,
+          "optional": true
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.card.c3 .c3-stage",
+          "at": 9.3,
+          "optional": true
         }
       ]
     },
@@ -120,7 +118,8 @@
       "setup": [
         {
           "do": "scrollPanelTo",
-          "selector": "section.receipt"
+          "selector": "section.receipt button.strip",
+          "block": "start"
         }
       ],
       "show": [

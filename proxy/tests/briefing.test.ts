@@ -39,7 +39,7 @@ describe("buildBriefingScript", () => {
     const s = buildBriefingScript(full);
     expect(s).toContain("about one point one million");
     expect(s).toMatch(/seven percent above the guide/);
-    expect(s).toMatch(/Heritage/);
+    expect(s).toMatch(/heritage overlay/);
     expect(s).toMatch(/strata/i);
     expect(s).not.toMatch(/\d/); // everything spoken as words
     expect(wordCount(s)).toBeLessThanOrEqual(MAX_WORDS);
@@ -102,5 +102,18 @@ describe("tts", () => {
     c.set("G3", "s", a);
     expect(c.get("G1", "script")).toBeUndefined();
     expect(c.get("G3", "s")).toBe(a);
+  });
+});
+
+describe("buildBriefingScript on live-shaped facts (no AVM)", () => {
+  const f = (data: unknown) => ({ available: true, data });
+  it("falls back to the last sold price, skipping listing rows", () => {
+    const s = buildBriefingScript({ saleHistory: f([{ date: "2025-03-18", price: 2500000, type: "For Sale" }, { date: "2025-04-11", price: 2750000, type: "Sold" }]) });
+    expect(s).toContain("last sold for about two point seven five million in two thousand and twenty-five");
+  });
+  it("uses the street price for a house but not for a unit", () => {
+    const street = f({ street: "Marriott Street", profile: { current_price: 2020000 } });
+    expect(buildBriefingScript({ streetProfile: street, basics: f({ dwelling_type: "residential" }) })).toContain("Homes on Marriott Street typically sell for about two million");
+    expect(buildBriefingScript({ streetProfile: street, basics: f({ dwelling_type: "apartment & unit" }) })).not.toContain("Marriott");
   });
 });

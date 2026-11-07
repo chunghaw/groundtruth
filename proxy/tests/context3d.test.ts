@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { buildContext3D, clearContext3DCache, getContext3D, heightFromFsr, parseBuildingControls, parseParcels, storeysFor, type Fetcher } from "@/lib/context3d";
+import { buildContext3D, clearContext3DCache, getContext3D, heightFromFsr, parseBuildingControls, parseParcels, storeysFor, validLocation, type Fetcher } from "@/lib/context3d";
 import { clipLine, clipRing, pointInPolygons, type Pos } from "@/lib/geo";
 import { mockUpstream } from "@/lib/mock";
 
@@ -66,7 +66,7 @@ describe("getContext3D (mock upstream)", () => {
     const lots = r.lots.features;
     expect(lots.length).toBeGreaterThanOrEqual(20);
     expect(lots.filter((f) => f.properties.isSubject)).toHaveLength(1);
-    expect(r.subject).toEqual({ maxHeightM: 12, storeys: 4, source: "hob" });
+    expect(r.subject).toEqual({ maxHeightM: 30, storeys: 9, source: "hob" });
     const hs = lots.map((f) => f.properties.maxHeightM!).filter((h) => h !== null);
     expect(Math.min(...hs)).toBe(9);
     expect(Math.max(...hs)).toBe(45);
@@ -105,5 +105,28 @@ describe("getContext3D (mock upstream)", () => {
   it("survives a throwing fetcher", async () => {
     const r = await getContext3D(G, async () => { throw new Error("boom"); });
     expect(r.available).toBe(false);
+  });
+});
+
+describe("subject lot without an upstream flag", () => {
+  const lot = (x: number, id: string) => ({ type: "Feature", geometry: { type: "MultiPolygon", coordinates: [[sq(151.2 + x, -33.9, 151.2 + x + 0.0001, -33.8999)]] }, properties: { gnaf_pid: id, is_subject: false } });
+  const parcels = { parcels: { type: "FeatureCollection", features: [lot(0, "A"), lot(0.0001, "B"), lot(0.0002, "C")] } };
+
+  it("uses the home's location to pick its lot and centres on it", () => {
+    const r = buildContext3D({ gnafId: "X", parcels, controls: null, noise: null, busyRoads: null, location: [151.20005, -33.89995] });
+    expect(r.lots.features.find((f) => f.properties.isSubject)?.properties.gnafId).toBe("A");
+    expect(r.center).toEqual([151.20005, -33.89995]);
+  });
+
+  it("falls back to the lot in the middle of the parcel window, with a note", () => {
+    const r = buildContext3D({ gnafId: "X", parcels, controls: null, noise: null, busyRoads: null });
+    expect(r.lots.features.find((f) => f.properties.isSubject)?.properties.gnafId).toBe("B");
+    expect(r.notes.join(" ")).toMatch(/inferred/);
+  });
+
+  it("rejects implausible location hints", () => {
+    expect(validLocation(151.2, -33.9)).toEqual([151.2, -33.9]);
+    expect(validLocation(0, 0)).toBeNull();
+    expect(validLocation(NaN, -33.9)).toBeNull();
   });
 });

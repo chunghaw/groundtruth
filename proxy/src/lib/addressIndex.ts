@@ -1,7 +1,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { parse } from "csv-parse/sync";
-import { canonNumber, canonStreet, canonSuburb, canonUnit, parseAddress, streetKey, titleCase } from "./normalise";
+import { canonNumber, canonStreet, canonSuburb, canonUnit, parseAddress, parseStreetLine, streetKey, titleCase } from "./normalise";
 
 /** One address from the supplied CSV, in loosely-normalised form. */
 export interface IndexInput {
@@ -11,6 +11,11 @@ export interface IndexInput {
   street: string | null;
   suburb: string | null;
   label?: string | null;
+  postcode?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  bedrooms?: number | null;
+  flats?: number | null;
 }
 
 export interface IndexRow {
@@ -18,11 +23,17 @@ export interface IndexRow {
   unit: string | null;
   number: string;
   label: string;
+  postcode: string | null;
+  lat: number | null;
+  lng: number | null;
+  bedrooms: number | null;
+  flats: number | null;
 }
 
 export interface AddressIndex {
   size: number;
   unitsAt(key: string): IndexRow[];
+  byGnaf(gnafId: string): IndexRow | null;
 }
 
 export interface ColumnMap {
@@ -40,6 +51,11 @@ export interface ColumnMap {
   street?: string;
   suburb?: string;
   address?: string;
+  postcode?: string;
+  lat?: string;
+  lng?: string;
+  bedrooms?: string;
+  flats?: string;
 }
 
 const PATTERNS: ReadonlyArray<[keyof ColumnMap, RegExp]> = [
@@ -57,6 +73,11 @@ const PATTERNS: ReadonlyArray<[keyof ColumnMap, RegExp]> = [
   ["street", /^(street|street_?address|road)$/i],
   ["suburb", /^(locality(_name)?|suburb(_name)?|town|sal(_name)?)$/i],
   ["address", /^(address|full_?address|address_?label|display_?name|formatted_?address|addr)$/i],
+  ["postcode", /^post_?code$/i],
+  ["lat", /^(lat|latitude)$/i],
+  ["lng", /^(lng|lon|long|longitude)$/i],
+  ["bedrooms", /^(bedrooms|beds|bed_count)$/i],
+  ["flats", /^flats_in_building$/i],
 ];
 
 export function detectColumns(headers: readonly string[]): ColumnMap {
@@ -70,6 +91,37 @@ export function detectColumns(headers: readonly string[]): ColumnMap {
 
 const get = (r: Record<string, string>, col?: string): string => (col ? (r[col] ?? "").trim() : "");
 
+const num = (v: string): number | null => {
+  if (!v) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+/** Address-line kinds that are homes. Shops, suites, car spaces, levels, stores etc. are dropped. */
+const HOME_KINDS = new Set(["UNIT", "APARTMENT", "APT", "FLAT", "STUDIO", "TOWNHOUSE", "PENTHOUSE", "HOUSE", "DUPLEX", "VILLA"]);
+const KIND_RE = /^([A-Za-z]+)\s+([A-Za-z0-9]+)\s*,\s*(.+)$/;
+
+/** "Unit 41, 19-23 Forbes Street" (no suburb) -> parts; null for non-home lines like "Shop 1, ...". */
+function parseCsvLine(line: string, unitCol: string): { unit: string | null; number: string | null; streetDisplay: string | null } | null {
+  const m = line.match(KIND_RE);
+  if (m && !HOME_KINDS.has(m[1].toUpperCase())) return null;
+  const rest = m ? m[3] : line;
+  const sl = parseStreetLine(rest);
+  if (sl.hadLevel && !m) return null;
+  const unit = m ? m[2] : sl.unit ?? (unitCol ? unitCol.replace(/^[A-Za-z]+\s+/, "") : null);
+  return { unit: unit || null, number: sl.number, streetDisplay: sl.streetDisplay };
+}
+
+function extras(r: Record<string, string>, m: ColumnMap): Pick<IndexInput, "postcode" | "lat" | "lng" | "bedrooms" | "flats"> {
+  return {
+    postcode: get(r, m.postcode) || null,
+    lat: num(get(r, m.lat)),
+    lng: num(get(r, m.lng)),
+    bedrooms: num(get(r, m.bedrooms)),
+    flats: num(get(r, m.flats)),
+  };
+}
+
 function rowFrom(r: Record<string, string>, m: ColumnMap): IndexInput | null {
   const gnafId = get(r, m.gnaf) || null;
   const structured = (m.number && (m.streetName || m.street) && m.suburb);
@@ -81,12 +133,22 @@ function rowFrom(r: Record<string, string>, m: ColumnMap): IndexInput | null {
     const street = m.streetName
       ? [get(r, m.streetName), get(r, m.streetType), get(r, m.streetSuffix)].filter(Boolean).join(" ")
       : get(r, m.street);
-    return { gnafId, unit, number, street: street || null, suburb: get(r, m.suburb) || null, label: m.address ? get(r, m.address) : null };
+    return { gnafId, unit, number, street: street || null, suburb: get(r, m.suburb) || null, label: m.address ? get(r, m.address) : null, ...extras(r, m) };
+  }
+  if (m.address && m.suburb && get(r, m.suburb)) {
+    // Street-line address with suburb in its own column (organiser flats CSV).
+    const suburb = get(r, m.suburb);
+    const p = parseCsvLine(get(r, m.address), get(r, m.unit));
+    if (!p) return null;
+    const label = p.number && p.streetDisplay
+      ? `${p.unit ? `${canonUnit(p.unit)}/` : ""}${p.number} ${p.streetDisplay}, ${suburb}`
+      : null;
+    return { gnafId, unit: p.unit, number: p.number, street: p.streetDisplay, suburb, label, ...extras(r, m) };
   }
   if (m.address) {
     const label = get(r, m.address);
     const a = parseAddress(label);
-    return { gnafId, unit: a.unit, number: a.number, street: a.street, suburb: a.suburb, label };
+    return { gnafId, unit: a.unit, number: a.number, street: a.street, suburb: a.suburb, label, ...extras(r, m) };
   }
   return null;
 }
@@ -104,6 +166,7 @@ function naturalUnit(a: IndexRow, b: IndexRow): number {
 
 export function buildIndex(inputs: readonly IndexInput[]): AddressIndex {
   const map = new Map<string, IndexRow[]>();
+  const byId = new Map<string, IndexRow>();
   let size = 0;
   for (const i of inputs) {
     const { number, first } = canonNumber(i.number);
@@ -116,11 +179,24 @@ export function buildIndex(inputs: readonly IndexInput[]): AddressIndex {
       `${unit ? `${unit}/` : ""}${number} ${titleCase(i.street ?? "")}, ${titleCase(i.suburb ?? "")}`;
     const key = streetKey({ numberFirst: first, street, suburb });
     const list = map.get(key) ?? [];
-    map.set(key, [...list, { gnafId: i.gnafId, unit, number, label }]);
+    const row: IndexRow = {
+      gnafId: i.gnafId,
+      unit,
+      number,
+      label,
+      postcode: i.postcode ?? null,
+      lat: i.lat ?? null,
+      lng: i.lng ?? null,
+      bedrooms: i.bedrooms ?? null,
+      flats: i.flats ?? null,
+    };
+    list.push(row);
+    map.set(key, list);
+    if (i.gnafId && !byId.has(i.gnafId)) byId.set(i.gnafId, row);
     size++;
   }
   for (const [k, v] of map) map.set(k, [...v].sort(naturalUnit));
-  return { size, unitsAt: (key) => map.get(key) ?? [] };
+  return { size, unitsAt: (key) => map.get(key) ?? [], byGnaf: (id) => byId.get(id) ?? null };
 }
 
 // ---------- process-wide lazy load ----------

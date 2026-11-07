@@ -1,13 +1,16 @@
 import type { Candidate, FactsResponse, MatchState, ResolveResponse } from '../api-types';
 import type { Extraction } from '../extract/types';
-import { factCards } from './cards';
+import { factSections } from './cards';
 import { h } from './dom';
 import { PANEL_CSS } from './styles';
 import { BriefingControl, BRIEFING_CSS, type BriefingDeps } from './briefing';
 import { OFFER_CSS } from './offerCard';
 import { context3dCard, CONTEXT3D_CSS } from '../context3d/card';
-import { factsVerdict, verdictEl, type Verdict } from './verdict';
-import type { Context3DHost } from '../context3d/types';
+import { factsVerdict, quotingVerdict, verdictEl, type Verdict } from './verdict';
+import type { Context3DHost, HeadroomInsight } from '../context3d/types';
+
+/** How long the verdict waits for the 3D headroom finding before settling on the next fallback. */
+const HEADROOM_WAIT_MS = 9000;
 
 export type PanelView =
   | { readonly kind: 'loading'; readonly ex: Extraction }
@@ -58,7 +61,10 @@ export class Panel {
   private view: PanelView | null = null;
   private guide = { value: '' };
   private readonly briefing: BriefingControl | null;
-  private c3: { gnafId: string; el: HTMLElement } | null = null;
+  /** `insight` undefined = the 3D card hasn't reported yet; null = it never will (no data / map failed / timed out). */
+  private c3: { gnafId: string; el: HTMLElement; insight?: HeadroomInsight | null } | null = null;
+  private verdictSlot: HTMLElement | null = null;
+  private headroomTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private readonly handlers: PanelHandlers, private readonly opts: PanelOptions = {}) {
     this.host = document.createElement('groundtruth-panel');
@@ -82,7 +88,7 @@ export class Panel {
     if (!this.host.isConnected) (this.opts.container ?? document.documentElement).append(this.host);
   }
 
-  destroy(): void { this.briefing?.stop(); this.host.remove(); }
+  destroy(): void { this.briefing?.stop(); if (this.headroomTimer) clearTimeout(this.headroomTimer); this.host.remove(); }
 
   resetGuide(): void { this.guide = { value: '' }; }
 
@@ -175,22 +181,25 @@ export class Panel {
     const cta = st === 'NO_MATCH'
       ? h('div', { class: 'vcta' }, h('button', { class: 'btn', onClick: () => this.render({ kind: 'manual', prefill: v.ex.raw }) }, 'Type the address'))
       : null;
-    const out: HTMLElement[] = [
-      st === 'EXACT' && v.factsPending ? h('div', { class: 'verdict', 'aria-hidden': 'true' }, h('div', { class: 'shimmer w30' }), h('div', { class: 'shimmer h2', style: 'margin-top:10px' })) : verdictEl(this.stateVerdict(st, v), cta),
-      this.receipt(v.ex, v.resolve, v.picked, st),
-    ];
+    const c3 = this.context3d(v);
+    const sections = st === 'EXACT' && !v.factsPending && v.facts ? factSections(v.facts, this.guide) : null;
+    const verdict = st === 'EXACT' && v.factsPending ? this.pendingVerdict()
+      : st === 'EXACT' && v.facts ? this.exactVerdict(v.facts)
+      : verdictEl(this.stateVerdict(st, v), cta);
+    const out: HTMLElement[] = [verdict, this.receipt(v.ex, v.resolve, v.picked, st)];
+    // Order: verdict → verified strip → agency quoting (only if it exists) → 3D next door → value → street → sales → risks → strata → basics → "not available" line.
+    if (sections) out.push(...sections.lead);
+    if (c3) out.push(c3);
     if (st === 'BUILDING') out.push(this.buildingBlock(v));
     if (st === 'CHOOSE') out.push(this.candidateList('Which home is it?', v.resolve.candidates));
     if (st === 'OUT_OF_AREA') out.push(h('section', { class: 'card na' }, h('h3', {}, 'Where Groundtruth works'),
       h('div', { class: 'big' }, 'The 29 suburbs of the City of Sydney, for now.'), h('div', { class: 'coverage' }, ...COVERAGE.map((s) => h('span', {}, s)))));
     if (st === 'EXACT') {
       if (v.factsPending) out.push(this.skeleton());
-      else if (v.facts) out.push(...factCards(v.facts, this.guide));
+      else if (sections) out.push(...sections.rest);
       else out.push(h('div', { class: 'err', role: 'alert' }, h('b', {}, 'Facts unavailable'), v.factsError ?? 'The proxy did not return facts.',
         h('div', { style: 'margin-top:8px' }, h('button', { class: 'btn', onClick: () => this.handlers.onRetry() }, 'Try again'))));
     }
-    const c3 = this.context3d(v);
-    if (c3) out.push(c3);
     out.push(this.wrongHome(v.ex));
     out.push(h('div', { class: 'foot' }, h('span', {}, 'Only the address was read from this page.'), h('span', {}, 'Data: Microburbs · G-NAF')));
     return out;
@@ -202,8 +211,40 @@ export class Panel {
     if (!this.opts.context3d || (st !== 'EXACT' && st !== 'BUILDING')) return null;
     const gnafId = v.picked?.gnafId ?? v.resolve.gnafId ?? v.resolve.candidates[0]?.gnafId ?? null;
     if (!gnafId) return null;
-    if (this.c3?.gnafId !== gnafId) this.c3 = { gnafId, el: context3dCard(gnafId, this.opts.context3d) };
+    if (this.c3?.gnafId !== gnafId) {
+      if (this.headroomTimer) { clearTimeout(this.headroomTimer); this.headroomTimer = null; }
+      this.c3 = { gnafId, el: context3dCard(gnafId, this.opts.context3d, v.resolve.location ?? null, (i) => this.onHeadroom(gnafId, i)) };
+    }
     return this.c3.el;
+  }
+
+  private pendingVerdict(): HTMLElement {
+    return h('div', { class: 'verdict pending', 'aria-hidden': 'true' }, h('div', { class: 'shimmer w30' }), h('div', { class: 'shimmer h2', style: 'margin-top:10px' }), h('div', { class: 'shimmer w55', style: 'margin-top:8px' }));
+  }
+
+  /** Agency quoting wins outright; otherwise wait (height reserved) for the 3D headroom finding, then fall back. */
+  private exactVerdict(facts: NonNullable<Extract<PanelView, { kind: 'result' }>['facts']>): HTMLElement {
+    const slot = h('div', { class: 'verdict-slot' });
+    this.verdictSlot = slot;
+    const q = quotingVerdict(facts);
+    const waiting = !q && !!this.c3 && this.c3.insight === undefined;
+    if (waiting && !this.headroomTimer) {
+      const gnafId = this.c3!.gnafId;
+      this.headroomTimer = setTimeout(() => { this.headroomTimer = null; if (this.c3?.gnafId === gnafId && this.c3.insight === undefined) this.onHeadroom(gnafId, null); }, HEADROOM_WAIT_MS);
+    }
+    slot.append(waiting ? this.pendingVerdict() : verdictEl(q ?? factsVerdict(facts, this.c3?.insight ?? null)));
+    return slot;
+  }
+
+  /** The 3D card reported (or timed out): update the verdict in place, no re-render, no layout jump. */
+  private onHeadroom(gnafId: string, insight: HeadroomInsight | null): void {
+    if (this.c3?.gnafId !== gnafId) return;
+    if (insight === null && this.c3.insight) return; // a late timeout never downgrades a real finding
+    this.c3.insight = insight;
+    const v = this.view;
+    if (v?.kind !== 'result' || !v.facts || !this.verdictSlot?.isConnected) return;
+    if (quotingVerdict(v.facts)) return;
+    this.verdictSlot.replaceChildren(verdictEl(factsVerdict(v.facts, insight)));
   }
 
   private buildingBlock(v: Extract<PanelView, { kind: 'result' }>): HTMLElement {

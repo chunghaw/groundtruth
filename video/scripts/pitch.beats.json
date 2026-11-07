@@ -2,60 +2,52 @@
   "deck": "pitch",
   "title": "Groundtruth: 45-second pitch",
   "maxTotalSec": 45,
-  "titleSec": 1.0,
-  "endSec": 2.0,
-  "tailPadSec": 0.3,
+  "titleSec": 0,
+  "endSec": 1.5,
+  "tailPadSec": 0.2,
   "beats": [
     {
       "id": "p1-hook",
-      "window": "0-8 s",
-      "maxSec": 8.0,
-      "vo": "Listings show you the house. Groundtruth shows you what can legally go up next door, and how far this agency's guides miss the sale price.",
+      "window": "0-5 s",
+      "maxSec": 6.5,
+      "vo": "Listings show you the house. Groundtruth proves which home it is, then shows what can legally go up next door.",
       "caption": "Groundtruth: a [[Chrome extension]] for home buyers",
-      "action": "Panel already open beside a real realestate.com.au listing (EXACT). Slow pan down the panel."
+      "action": "Panel already open beside a real realestate.com.au unit listing (Verified home strip, collapsed)."
     },
     {
       "id": "p2-receipt",
-      "window": "8-15 s",
-      "maxSec": 7.0,
-      "vo": "It's a Chrome extension that reads only the address, then shows an address match receipt: the exact home, every check visible.",
-      "caption": "[[Address match]] receipt: reads only the address, pins the exact G-NAF home",
-      "action": "Cursor rests on the match receipt (read / from / normalised / g-naf / checks)."
+      "window": "5-14 s",
+      "maxSec": 9,
+      "vo": "It reads only the address, never the listing. Tap Verified home, and the receipt shows the exact G-NAF home, four of four checks.",
+      "caption": "[[Address match]] receipt: reads only the address · exact G-NAF home · 4/4 checks",
+      "action": "Cursor clicks the Verified home strip; it expands into the receipt (G-NAF id, 4/4 checks)."
     },
     {
-      "id": "p3-underquote",
-      "window": "15-27 s",
-      "maxSec": 10.5,
-      "vo": "The buyer's hero number: how often this agency's sales beat their guide. Type the guide you were quoted, and see where it really sits.",
-      "caption": "Agency underquoting rate + your guide vs the value range = [[offer ceiling]]",
-      "action": "Scroll to Agency quoting accuracy card, then type \"$1.1m\" into the guide box; verdict appears."
+      "id": "p3-next-door",
+      "window": "14-28 s",
+      "maxSec": 13,
+      "vo": "Then what no listing shows. Within a hundred metres, {{nextDoorLotsSpoken}} lots could rise {{nextDoorStoreysSpoken}} more storeys. The glass is their legal headroom, so a buyer knows whether that view is safe.",
+      "caption": "[[{{nextDoorLots}} lots]] within 100 m could rise [[{{nextDoorStoreys}} more storeys]]",
+      "action": "3D next-door card flies in (second card); headroom glass volumes visible; slow orbit/hover."
     },
     {
       "id": "p4-accuracy",
-      "window": "27-36 s",
-      "maxSec": 9.0,
-      "vo": "On {{heldOutN}} held-out listings, frozen before testing, the exact-home match was right {{exactPrecisionSpoken}} of the time, and every out-of-area listing was caught.",
-      "caption": "Held-out test: {{exactPrecision}} exact-match precision · {{outOfArea}} out-of-area caught",
-      "action": "Accuracy slide (rendered from numbers.json).",
+      "window": "28-38 s",
+      "maxSec": 9,
+      "vo": "We tested on {{heldOutNSpoken}} held-out real listings, frozen before the run. {{wrongHomesSpoken}} wrong homes.",
+      "caption": "{{heldOutN}} held-out real listings: [[{{wrongHomes}} wrong homes]]",
+      "action": "Accuracy slide (from numbers.json).",
       "still": {
         "name": "accuracy-pitch",
-        "heading": "Tested on [[{{heldOutN}} held-out listings]]",
+        "heading": "[[{{heldOutN}}]] held-out real listings",
         "rows": [
           [
-            "Exact-home precision",
-            "{{exactPrecision}}"
+            "Wrong homes returned",
+            "{{wrongHomes}}"
           ],
           [
-            "Exact listings matched",
+            "Exact-home rate",
             "{{exactRate}}"
-          ],
-          [
-            "Out-of-area caught",
-            "{{outOfArea}}"
-          ],
-          [
-            "Wrong home returned",
-            "{{falseMatches}}"
           ]
         ],
         "note": "Labels frozen before the run · eval/results.md"
@@ -63,10 +55,10 @@
     },
     {
       "id": "p5-close",
-      "window": "36-43 s",
-      "maxSec": 6.0,
-      "vo": "Built on the Microburbs API, ready for any property extension. We're Groundtruth.",
-      "caption": "Built on the [[Microburbs API]] · team Groundtruth",
+      "window": "38-45 s",
+      "maxSec": 7.5,
+      "vo": "Built on the Microburbs API: G-NAF matching, planning controls, valuations. Ready to drop into any property extension. Groundtruth.",
+      "caption": "Built on the [[Microburbs API]] · G-NAF matching · planning controls · valuations",
       "action": "Back on the listing with the panel; end card follows."
     }
   ]

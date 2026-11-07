@@ -7,7 +7,7 @@ type MapModule = { renderMap: (el: HTMLElement, d: Context3D, o: { workerUrl: st
 export function webContext3DHost(assetBase: string): Context3DHost {
   let mod: Promise<MapModule> | null = null;
   return {
-    load: (gnafId) => fetchContext3D(gnafId),
+    load: (gnafId, location) => fetchContext3D(gnafId, fetch, location ?? null),
     async mount(stage, data) {
       mod ??= import(/* webpackIgnore: true */ new URL('groundtruth-map3d.js', assetBase).href) as Promise<MapModule>;
       const m = await mod;

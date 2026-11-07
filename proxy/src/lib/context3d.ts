@@ -8,8 +8,11 @@
  *   /v1/suburbs/{suburb}/shapes/noise-heatmap            -> noise colour regions (optional layer)
  *   /v1/suburbs/{suburb}/shapes/busy-roads               -> busy road lines (optional layer)
  *
- * ALL response-shape knowledge lives in the `parse*` functions below so it can be fixed in one place
- * once real responses are seen. Shapes follow the OpenAPI spec examples; unverified against live data.
+ * ALL response-shape knowledge lives in the `parse*` functions below. Verified against live responses
+ * (Nov 2026): parcels are MultiPolygons with { gnaf_pid, is_subject }; HOB features carry numeric
+ * `height_m`, FSR features numeric `fsr` (+ a "2.0–3.5:1" band string); /profile `suburb` is the API
+ * name incl. suffixes like "Waterloo (NSW)". Some homes (e.g. new strata buildings) have no flagged
+ * subject lot, so the caller can pass the home's own lat/lng to pick it.
  */
 import { bboxIntersects, bboxOf, centroid, clipLine, clipRing, compass, linesOf, offsetM, pointInPolygons, polygonsOf, roundPos, windowAround, type BBox, type PolygonCoords, type Pos } from "./geo";
 import type { Upstream } from "./microburbs";
@@ -90,13 +93,23 @@ export interface ParsedParcel { gnafId: string | null; isSubject: boolean; polys
 export function parseParcels(data: unknown): ParsedParcel[] {
   const d = isObj(data) ? data : {};
   const fc = d.parcels ?? d.geojson ?? d.features ?? data;
-  return featuresOf(fc)
+  const parsed = featuresOf(fc)
     .map((f) => {
       const p = isObj(f.properties) ? f.properties : {};
       const id = p.gnaf_pid ?? p.gnaf_id ?? p.gnafId ?? null;
       return { gnafId: typeof id === "string" ? id : null, isSubject: p.is_subject === true || p.isSubject === true, polys: polygonsOf(f.geometry) };
     })
     .filter((p) => p.polys.length > 0);
+  // Live data repeats the lot outline once per strata unit (~8x in Surry Hills): keep one per outline,
+  // flagged as the subject when any of its units is.
+  const byShape = new Map<string, ParsedParcel>();
+  for (const p of parsed) {
+    const key = JSON.stringify(p.polys);
+    const seen = byShape.get(key);
+    if (!seen) byShape.set(key, p);
+    else if (p.isSubject && !seen.isSubject) byShape.set(key, p);
+  }
+  return [...byShape.values()];
 }
 
 export interface Zone { value: number; polys: PolygonCoords[]; bbox: BBox }
@@ -165,14 +178,35 @@ export function lotHeight(c: Pos, hob: Zone[], fsr: Zone[]): Pick<LotProps, "max
   return { maxHeightM: null, source: "none", fsr: null, storeys: null };
 }
 
-export interface Inputs { gnafId: string; parcels: unknown; controls: unknown; noise: unknown; busyRoads: unknown }
+export interface Inputs { gnafId: string; parcels: unknown; controls: unknown; noise: unknown; busyRoads: unknown; location?: Pos | null }
+
+/** Sanity box for a location hint (City of Sydney plus a margin). */
+export function validLocation(lng: number, lat: number): Pos | null {
+  return Number.isFinite(lng) && Number.isFinite(lat) && lng > 150.9 && lng < 151.5 && lat > -34.1 && lat < -33.7 ? [lng, lat] : null;
+}
+
+/**
+ * The home's lot: the upstream flag, else its gnaf id, else the lot under the home's location (when
+ * given), else the lot under the middle of the 200 m parcel window (the API centres it on the home).
+ */
+function findSubject(parcels: ParsedParcel[], gnafId: string, location: Pos | null): { parcel: ParsedParcel | null; how: "flag" | "point" | "window" | "none" } {
+  const flagged = parcels.find((p) => p.isSubject) ?? parcels.find((p) => p.gnafId === gnafId);
+  if (flagged) return { parcel: flagged, how: "flag" };
+  const all = bboxOf(parcels.flatMap((p) => p.polys.map((poly) => poly[0])));
+  const probe: Pos = location ?? [(all.minX + all.maxX) / 2, (all.minY + all.maxY) / 2];
+  const hit = parcels.find((p) => pointInPolygons(probe, p.polys));
+  if (hit) return { parcel: hit, how: location ? "point" : "window" };
+  return { parcel: null, how: "none" };
+}
 
 export function buildContext3D(inp: Inputs): Context3D {
   const empty = (reason: string): Context3D => ({ gnafId: inp.gnafId, available: false, reason, center: null, radiusM: RADIUS_M, lots: { type: "FeatureCollection", features: [] }, noise: null, busyRoads: null, subject: null, tallestNeighbour: null, heightSource: "none", notes: [] });
   const parcels = parseParcels(inp.parcels);
   if (parcels.length === 0) return empty("No lot boundaries around this home.");
-  const subjectParcel = parcels.find((p) => p.isSubject) ?? parcels.find((p) => p.gnafId === inp.gnafId) ?? null;
-  const center = centroid(subjectParcel?.polys ?? parcels.flatMap((p) => p.polys)) as Pos;
+  const location = inp.location ?? null;
+  const found = findSubject(parcels, inp.gnafId, location);
+  const subjectParcel = found.parcel;
+  const center = (location ?? centroid(subjectParcel?.polys ?? parcels.flatMap((p) => p.polys))) as Pos;
   const win = windowAround(center, RADIUS_M);
   const { hob, fsr } = parseBuildingControls(inp.controls);
   const near = (zs: Zone[]) => zs.filter((z) => bboxIntersects(z.bbox, win));
@@ -196,7 +230,8 @@ export function buildContext3D(inp: Inputs): Context3D {
     else if (ht.maxHeightM !== null && off.dist <= 120 && (!tallest || ht.maxHeightM > tallest.maxHeightM || (ht.maxHeightM === tallest.maxHeightM && off.dist < tallest.distanceM)))
       tallest = { gnafId: p.gnafId, maxHeightM: ht.maxHeightM, storeys: ht.storeys!, source: ht.source, distanceM: Math.round(off.dist), direction: compass(off.east, off.north) };
   }
-  if (!subjectParcel) notes.push("The home's own lot was not flagged; centred on the surrounding lots.");
+  if (found.how === "window") notes.push("The home's lot was inferred from its position; it may be a neighbouring lot.");
+  if (!subjectParcel) notes.push("The home's own lot was not found; centred on the surrounding lots.");
   const sources = new Set(features.map((f) => f.properties.source).filter((s) => s !== "none"));
   const heightSource = sources.size === 0 ? "none" : sources.size > 1 ? "mixed" : ([...sources][0] as "hob" | "fsr-estimate");
   if (sources.has("fsr-estimate")) notes.push(`Some heights estimated from FSR (FSR ÷ ${SITE_COVERAGE} site cover × ${STOREY_M} m per storey).`);
@@ -242,8 +277,9 @@ async function safe(f: Fetcher, path: string): Promise<Upstream> {
   }
 }
 
-export async function getContext3D(gnafId: string, fetcher: Fetcher): Promise<Context3D> {
-  const hit = cache.get(gnafId);
+export async function getContext3D(gnafId: string, fetcher: Fetcher, location: Pos | null = null): Promise<Context3D> {
+  const key = location ? `${gnafId}@${location[0].toFixed(5)},${location[1].toFixed(5)}` : gnafId;
+  const hit = cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.value;
   const base = `/v1/properties/${encodeURIComponent(gnafId)}`;
   const [parcelsRes, profileRes] = await Promise.all([safe(fetcher, `${base}/surroundings/parcels`), safe(fetcher, `${base}/profile`)]);
@@ -252,11 +288,11 @@ export async function getContext3D(gnafId: string, fetcher: Fetcher): Promise<Co
   const [controls, noise, roads] = sub
     ? await Promise.all([safe(fetcher, `${sub}/development/building-controls`), safe(fetcher, `${sub}/shapes/noise-heatmap?geojson=true`), safe(fetcher, `${sub}/shapes/busy-roads?geojson=true`)])
     : [null, null, null];
-  const value = buildContext3D({ gnafId, parcels: dataOf(parcelsRes), controls: controls && dataOf(controls), noise: noise && dataOf(noise), busyRoads: roads && dataOf(roads) });
+  const value = buildContext3D({ gnafId, parcels: dataOf(parcelsRes), controls: controls && dataOf(controls), noise: noise && dataOf(noise), busyRoads: roads && dataOf(roads), location });
   if (!suburb) value.notes.push("Couldn't determine the suburb, so no planning controls.");
   if (parcelsRes.status === 200 || parcelsRes.status === 404) {
     if (cache.size >= 500) cache.delete(cache.keys().next().value!);
-    cache.set(gnafId, { at: Date.now(), value });
+    cache.set(key, { at: Date.now(), value });
   }
   return value;
 }

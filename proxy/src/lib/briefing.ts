@@ -81,6 +81,25 @@ function valueSentence(avm: unknown): string | null {
   return `Microburbs values this home at ${speakMoney(mid)}${range}.`;
 }
 
+/** Live data rarely has an AVM: fall back to the home's last sale, then to its street's typical price. */
+function priceFallbackSentence(sales: unknown, street: unknown, basics: unknown): string | null {
+  if (Array.isArray(sales)) {
+    const sold = sales
+      .filter((x) => isObj(x) && num(x, ["price"]) !== null && (!str(x, ["type"]) || /sold/i.test(str(x, ["type"])!)))
+      .sort((a, b) => String(str(b, ["date"]) ?? "").localeCompare(String(str(a, ["date"]) ?? "")))[0];
+    if (sold) {
+      const year = (str(sold, ["date"]) ?? "").match(/^\d{4}/)?.[0];
+      return `This home last sold for ${speakMoney(num(sold, ["price"])!)}${year ? ` in ${speakNumber(Number(year))}` : ""}.`;
+    }
+  }
+  // The street price is house-led: don't read it out for an apartment.
+  if (/unit|apartment|flat/i.test(str(basics, ["dwelling_type"]) ?? "")) return null;
+  const price = isObj(street) ? num(street.profile, ["current_price"]) : null;
+  if (price === null) return null;
+  const name = str(street, ["street"]);
+  return `Homes on ${name ?? "this street"} typically sell for ${speakMoney(price)}.`;
+}
+
 function agencySentence(q: unknown): string | null {
   const dev = num(q, ["median_deviation_pct", "avg_gap_pct"]);
   const rateRaw = num(q, ["underquote_rate_pct", "underquote_rate"]);
@@ -100,7 +119,7 @@ function riskSentence(risks: unknown): string | null {
   const hit = items.find(({ x }) => isObj(x) && x.on_property === true);
   if (hit) {
     const name = (isObj(hit.x) && typeof hit.x.name === "string" ? hit.x.name : hit.k.replace(/_/g, " ")).replace(/\d+/g, (d) => speakNumber(Number(d)));
-    return `A ${name} overlay applies to this property; check it with the council.`;
+    return `A ${name.toLowerCase()} overlay applies to this property; check it with the council.`;
   }
   return items.length ? "No risk overlays sit on the property itself." : null;
 }
@@ -137,7 +156,7 @@ function riseSentence(ctx: unknown): string | null {
  */
 export function buildBriefingScript(facts: Partial<Record<string, Fact>>, context3d: unknown = null): string {
   const parts: Array<{ order: number; text: string | null }> = [
-    { order: 0, text: valueSentence(factData(facts.avm)) },
+    { order: 0, text: valueSentence(factData(facts.avm)) ?? priceFallbackSentence(factData(facts.saleHistory), factData(facts.streetProfile), factData(facts.basics)) },
     { order: 1, text: agencySentence(factData(facts.agentQuoting)) },
     { order: 2, text: riseSentence(context3d ?? factData(facts.context3d)) },
     { order: 3, text: riskSentence(factData(facts.risks)) },

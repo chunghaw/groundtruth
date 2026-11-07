@@ -1,6 +1,11 @@
 {
   "vars": {
-    "DEMO": "https://groundtruth-tawny-one.vercel.app/demo"
+    "DEMO": "https://groundtruth-tawny-one.vercel.app/demo",
+    "P_UNIT": "live-exact-unit",
+    "P_HOUSE": "live-exact-house",
+    "P_BUILDING": "live-building",
+    "P_OOA": "live-out-of-area",
+    "_old_mock_ids": "exact-unit / exact-house / building / out-of-area"
   },
   "viewport": {
     "width": 1280,
@@ -24,85 +29,93 @@
     "p1-hook": {
       "setup": [
         {
-          "do": "goto",
-          "url": "{{DEMO}}"
+          "do": "scrollPage",
+          "y": 0
+        },
+        {
+          "do": "selectPage",
+          "selector": ".demo-controls select",
+          "value": "{{P_HOUSE}}"
         },
         {
           "do": "waitPanel",
           "selector": ".pill.EXACT",
           "timeout": 30000
-        },
-        {
-          "do": "waitPanel",
-          "selector": "section[aria-label='Agency quoting accuracy']",
-          "timeout": 25000
         }
       ],
       "show": [
         {
-          "do": "pause",
-          "ms": 600
-        },
-        {
-          "do": "scrollPanelTo",
-          "selector": "section[aria-label='Agency quoting accuracy']",
-          "block": "center",
-          "at": 4.0
+          "do": "hoverPanel",
+          "selector": "section.receipt button.strip",
+          "at": 1.5
         }
       ]
     },
     "p2-receipt": {
-      "setup": [
-        {
-          "do": "scrollPanelTo",
-          "selector": "section.receipt",
-          "block": "center"
-        }
-      ],
       "show": [
         {
           "do": "clickPanel",
-          "selector": "section.receipt:not(.open) .strip",
-          "optional": true,
-          "timeout": 400
-        },
-        {
-          "do": "hoverPanel",
-          "selector": "section.receipt dl dd:nth-of-type(1)"
-        },
-        {
-          "do": "hoverPanel",
-          "selector": "section.receipt dl dd:nth-of-type(4)",
-          "at": 2.8
-        }
-      ]
-    },
-    "p3-underquote": {
-      "setup": [],
-      "show": [
-        {
-          "do": "scrollPanelTo",
-          "selector": "section[aria-label='Agency quoting accuracy']",
-          "block": "center"
-        },
-        {
-          "do": "hoverPanel",
-          "selector": "section[aria-label='Agency quoting accuracy'] .big"
-        },
-        {
-          "do": "scrollPanelTo",
-          "selector": "section[aria-label='Realistic budget'], section[aria-label='Microburbs value']",
-          "block": "center",
-          "at": 4.2
-        },
-        {
-          "do": "typePanel",
-          "selector": "#gt-guide, input[aria-label='Guide price you were quoted']",
-          "text": "$1.1m"
+          "selector": "section.receipt button.strip",
+          "at": 0.3
         },
         {
           "do": "waitPanel",
-          "selector": ".offer-pill, .guide-verdict.below, .guide-verdict.above, .guide-verdict.inside"
+          "selector": "section.receipt.open"
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt .rbody dd:nth-of-type(1)",
+          "at": 2.3
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt .rbody dd:nth-of-type(3)",
+          "at": 4.3
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt .rbody dd:nth-of-type(4)",
+          "at": 6.3
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt .rbody dd.checks",
+          "at": 8.3,
+          "optional": true
+        }
+      ]
+    },
+    "p3-next-door": {
+      "show": [
+        {
+          "do": "scrollPanelTo",
+          "selector": "section.card.c3",
+          "block": "start",
+          "at": 0.3
+        },
+        {
+          "do": "waitPanel",
+          "selector": "section.card.c3 .c3-lead",
+          "timeout": 20000,
+          "optional": true
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.card.c3 .c3-stage",
+          "at": 3.3,
+          "optional": true
+        },
+        {
+          "do": "clickPanel",
+          "selector": "section.card.c3 .c3-segs button.c3-seg",
+          "at": 7.3,
+          "optional": true
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.card.c3 .c3-stage",
+          "at": 9.3,
+          "optional": true
         }
       ]
     },

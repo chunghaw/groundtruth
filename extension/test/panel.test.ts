@@ -1,4 +1,5 @@
 import { Panel } from '../src/content/panel';
+import { subjectCaption } from '../src/context3d/card';
 import type { ResolveResponse } from '../src/api-types';
 
 const ex = { source: 'rea' as const, listingId: '1', raw: '902/417-419 Bourke Street, Surry Hills, NSW 2010', parts: null, from: 'h1' as const };
@@ -33,6 +34,10 @@ describe('Panel', () => {
     expect(q(p, '.card.alert').length).toBe(1);
     expect(t).toContain('$1m');
     expect(t).toContain('no street row');
+    const titles = [...q(p, '.card h3')].map((e) => e.textContent);
+    expect(titles.slice(0, 3)).toEqual(['Agency quoting accuracy', 'Realistic budget', 'Microburbs value']);
+    expect(titles.indexOf('Street vs suburb')).toBe(-1); // unavailable: no card, just the quiet line
+    expect(q(p, 'details.na-line summary')[0].textContent).toContain('Not available for this home: street profile');
     p.render({ kind: 'result', ex, resolve: resolve('EXACT'), bedrooms: null, facts: { gnafId: 'G', facts: {
       streetProfile: { available: true, data: { profile: { title: 'Mock Street', annual_4y: 5.1, renters_pct: '45%' }, suburb_medians: { annual_4y: 4.8, renters_pct: 50 }, forecast_rank: { band: 'Top 15%' } } } } } });
     expect(text(p)).toContain('5.1% · 4.8%');
@@ -40,10 +45,45 @@ describe('Panel', () => {
     expect(text(p)).toContain('Top 15%');
     expect(text(p)).toContain('Not available'); // missing facts render gracefully
     expect(t).toContain('$4,200/yr');
-    const titles = [...q(p, '.card h3')].map((e) => e.textContent);
-    expect(titles[0]).toBe('Agency quoting accuracy');
-    expect(titles[1]).toBe('Realistic budget');
-    expect(titles[2]).toBe('Microburbs value');
+    expect([...q(p, '.card h3')].map((e) => e.textContent)).toEqual(['Street vs suburb']); // no budget without AVM or quoting
+    expect(q(p, 'details.na-line')[0].textContent).toContain('agency quoting, independent value');
+  });
+
+  it('moves the 3D card up and upgrades the verdict in place once headroom arrives', async () => {
+    const realIO = (globalThis as any).IntersectionObserver;
+    (globalThis as any).IntersectionObserver = undefined;
+    let ready!: (m: any) => void;
+    const host = {
+      load: vi.fn(async () => ({ gnafId: 'GANSW1', available: true, center: [151.2, -33.9], radiusM: 120, lots: { type: 'FeatureCollection', features: [] }, noise: null, busyRoads: null, subject: null, tallestNeighbour: null, heightSource: 'hob', notes: [] })),
+      mount: vi.fn(() => new Promise((r) => { ready = r; })),
+    };
+    const p = new Panel(handlers(), { context3d: host as any });
+    p.render({ kind: 'result', ex, resolve: resolve('EXACT'), bedrooms: null, facts: { gnafId: 'GANSW1', facts: {
+      agentQuoting: { available: false, data: null, reason: 'no active listing' },
+      avm: { available: true, data: { predicted_price: 1_000_000, predicted_price_low: 900_000, predicted_price_high: 1_100_000 } },
+      risks: { available: true, data: {} },
+    } } });
+    const order = [...q(p, '.body > *')].map((e) => e.getAttribute('aria-label') ?? e.className.split(' ')[0]);
+    expect(order.slice(0, 4)).toEqual(['verdict-slot', 'Match receipt', 'What can rise next door', 'Realistic budget']);
+    expect(q(p, '.verdict-slot .verdict.pending').length).toBe(1);
+    await vi.waitFor(() => expect(host.mount).toHaveBeenCalled());
+    const slot = q(p, '.verdict-slot')[0];
+    ready({ setOverlay: () => {}, destroy: () => {}, insight: { known: true, nearM: 100, count: 2, minStoreys: 4, maxStoreys: 5, subjectActualM: null,
+      biggest: { distanceM: 40, direction: 'N', storeys: 5, maxHeightM: 22, actualM: 6, source: 'hob' } } });
+    await vi.waitFor(() => expect(q(p, '.verdict h2')[0]?.textContent).toBe('2 lots within 100 m could rise 4–5 more storeys'));
+    expect(q(p, '.verdict-slot')[0]).toBe(slot); // updated in place
+    (globalThis as any).IntersectionObserver = realIO;
+  });
+
+  it('falls back to the AVM when the 3D view finds no headroom', async () => {
+    const realIO = (globalThis as any).IntersectionObserver;
+    (globalThis as any).IntersectionObserver = undefined;
+    const host = { load: vi.fn(async () => ({ gnafId: 'GANSW1', available: false, reason: 'no lots', lots: { features: [] } })), mount: vi.fn() };
+    const p = new Panel(handlers(), { context3d: host as any });
+    p.render({ kind: 'result', ex, resolve: resolve('EXACT'), bedrooms: null, facts: { gnafId: 'GANSW1', facts: {
+      avm: { available: true, data: { predicted_price: 1_000_000, predicted_price_low: 900_000, predicted_price_high: 1_100_000 } } } } });
+    await vi.waitFor(() => expect(q(p, '.verdict h2')[0]?.textContent).toBe('Microburbs values this home at $1m'));
+    (globalThis as any).IntersectionObserver = realIO;
   });
 
   it('BUILDING shows bedroom buttons that call back', () => {
@@ -108,5 +148,11 @@ describe('Panel', () => {
     p.render({ kind: 'result', ex, resolve: resolve('NO_MATCH', { message: 'No home matched' }), facts: null, bedrooms: null });
     expect((q(p, 'section.receipt')[0] as HTMLElement).classList.contains('open')).toBe(true);
     expect(q(p, '.verdict')[0].textContent).toContain('No home matched');
+  });
+
+  it('3D caption never promises "up to 3 m" for an older tower', () => {
+    const d = { subject: { maxHeightM: 3, storeys: 1, source: 'hob' } } as any;
+    expect(subjectCaption(d, 63)).toBe("Your building predates today's height control (≈63 m, above today's 3 m limit)");
+    expect(subjectCaption(d, 63)).not.toContain('up to 3 m');
   });
 });

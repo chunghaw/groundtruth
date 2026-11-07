@@ -1,6 +1,7 @@
 {
   "vars": {
-    "DEMO": "https://groundtruth-tawny-one.vercel.app/demo"
+    "DEMO": "https://groundtruth-tawny-one.vercel.app/demo",
+    "P_BUILDING": "building"
   },
   "viewport": {
     "width": 1280,
@@ -9,35 +10,32 @@
   "deviceScaleFactor": 1.5,
   "extension": false,
   "blockers": [],
-  "init": [],
+  "init": [
+    {
+      "do": "goto",
+      "url": "{{DEMO}}"
+    },
+    {
+      "do": "waitPanel",
+      "selector": ".pill.EXACT",
+      "timeout": 30000
+    }
+  ],
   "beats": {
     "x1-receipt": {
-      "setup": [
+      "show": [
         {
-          "do": "goto",
-          "url": "{{DEMO}}"
+          "do": "clickPanel",
+          "selector": "section.receipt button.strip",
+          "at": 0.3
         },
         {
           "do": "waitPanel",
-          "selector": ".pill.EXACT",
-          "timeout": 30000
-        }
-      ],
-      "show": [
-        {
-          "do": "scrollPanelTo",
-          "selector": "section.receipt",
-          "block": "center"
-        },
-        {
-          "do": "clickPanel",
-          "selector": "section.receipt:not(.open) .strip",
-          "optional": true,
-          "timeout": 400
+          "selector": "section.receipt.open"
         },
         {
           "do": "hoverPanel",
-          "selector": "section.receipt dl dd:nth-of-type(4)"
+          "selector": "section.receipt .rbody dd:nth-of-type(4)"
         }
       ]
     },
@@ -46,19 +44,19 @@
         {
           "do": "scrollPage",
           "y": 0
-        }
-      ],
-      "show": [
+        },
         {
           "do": "selectPage",
           "selector": ".demo-controls select",
-          "value": "building"
+          "value": "{{P_BUILDING}}"
         },
         {
           "do": "waitPanel",
           "selector": ".pill.BUILDING",
-          "timeout": 20000
-        },
+          "timeout": 30000
+        }
+      ],
+      "show": [
         {
           "do": "scrollPanelTo",
           "selector": "section[aria-label='Narrow down the unit']",

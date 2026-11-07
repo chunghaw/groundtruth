@@ -6,12 +6,13 @@
  * ("2 lots within 100 m could rise ~6 more storeys") once the map has compared real buildings.
  */
 import { h } from '../content/dom';
-import type { Context3D, Context3DHost, HeadroomInsight, Highlight, MapController, Overlay } from './types';
+import type { Context3D, Context3DHost, HeadroomInsight, Highlight, LatLng, MapController, Overlay } from './types';
 
 export const GHOST_RAMP_CSS = 'linear-gradient(90deg,#f7b84b,#f58a4b 40%,#e8505b)';
 
 const storeys = (n: number | null | undefined) => (n ? ` (≈${n} storey${n === 1 ? '' : 's'})` : '');
 const metres = (m: number) => `${Number.isInteger(m) ? m : m.toFixed(1)} m`;
+const STOREY_TOLERANCE_M = 3.2;
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
 export function neighbourCaption(t: Highlight | null): string | null {
@@ -23,7 +24,12 @@ export function neighbourCaption(t: Highlight | null): string | null {
 export function subjectCaption(d: Context3D, actualM: number | null = null): string | null {
   const s = d.subject;
   if (!s || s.maxHeightM === null) return null;
-  const now = actualM !== null ? ` · about ${metres(actualM)} today` : '';
+  // Older buildings can far exceed today's control (live data has e.g. a 63 m tower on a 3 m zone):
+  // don't promise "up to 3 m" for a lot that already holds a tower.
+  if (actualM !== null && actualM > s.maxHeightM + STOREY_TOLERANCE_M) {
+    return `Your building predates today's height control (≈${metres(actualM)}, above today's ${metres(s.maxHeightM)} limit)`;
+  }
+  const now = actualM === null ? '' : ` · about ${metres(actualM)} today`;
   return `Your lot: up to ${metres(s.maxHeightM)}${storeys(s.storeys)}${s.source === 'fsr-estimate' ? ', estimated from FSR' : ''}${now}`;
 }
 
@@ -42,7 +48,10 @@ export function headroomCaption(i: HeadroomInsight | null | undefined): { lead: 
 
 interface CardState { data: Context3D | null; error: string | null; map: MapController | null; mapError: string | null; overlays: Record<Overlay, boolean> }
 
-export function context3dCard(gnafId: string, host: Context3DHost): HTMLElement {
+/** `onInsight` fires once: the map's headroom insight, or null if the data/map never produced one. */
+export function context3dCard(gnafId: string, host: Context3DHost, location: LatLng | null = null, onInsight?: (i: HeadroomInsight | null) => void): HTMLElement {
+  let told = false;
+  const tell = (i: HeadroomInsight | null) => { if (!told) { told = true; onInsight?.(i); } };
   const st: CardState = { data: null, error: null, map: null, mapError: null, overlays: { noise: false, roads: false, headroom: true } };
   const caption = h('div', { class: 'c3-cap', 'aria-live': 'polite' }, h('div', { class: 'shimmer' }));
   const stage = h('div', { class: 'c3-stage', 'aria-label': '3D model of your home and what could legally rise on nearby lots' });
@@ -78,6 +87,7 @@ export function context3dCard(gnafId: string, host: Context3DHost): HTMLElement 
       card.classList.add('na');
       caption.replaceChildren(h('div', { class: 'big' }, d.reason ?? 'No lot data around this home.'));
       stage.remove(); tools.remove(); legend.remove();
+      tell(null);
       return;
     }
     renderCaption(d, null);
@@ -95,6 +105,7 @@ export function context3dCard(gnafId: string, host: Context3DHost): HTMLElement 
   };
 
   const onMapReady = (d: Context3D, m: MapController) => {
+    tell(m.insight ?? null);
     if (m.insight && !m.insight.known) foot.textContent = `${foot.textContent ?? ''} Current building heights unavailable here, so glass shows the full permitted envelope.`;
     else renderCaption(d, m.insight ?? null);
   };
@@ -109,6 +120,7 @@ export function context3dCard(gnafId: string, host: Context3DHost): HTMLElement 
       onMapReady(d, m);
     }).catch((e: Error) => {
       st.mapError = e.message;
+      tell(null);
       stage.classList.remove('loading');
       stage.replaceChildren(h('div', { class: 'c3-fallback' }, '3D view unavailable here. ', e.message));
     });
@@ -118,8 +130,9 @@ export function context3dCard(gnafId: string, host: Context3DHost): HTMLElement 
   const start = () => {
     if (started) return;
     started = true;
-    host.load(gnafId).then((d) => { st.data = d; showData(d); startMap(d); }).catch((e: Error) => {
+    host.load(gnafId, location).then((d) => { st.data = d; showData(d); startMap(d); }).catch((e: Error) => {
       st.error = e.message;
+      tell(null);
       card.classList.add('na');
       caption.replaceChildren(h('div', { class: 'big' }, `Neighbourhood heights unavailable: ${e.message}`));
       stage.remove(); tools.remove(); legend.remove();

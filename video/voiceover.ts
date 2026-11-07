@@ -15,7 +15,8 @@ const deck = loadDeck(deckArg());
 const fileEnv = loadEnvFile(join(REPO_DIR, 'proxy', '.env.local'));
 const env = (k: string): string | undefined => process.env[k] || fileEnv[k] || undefined;
 const apiKey = env('ELEVENLABS_API_KEY');
-const voiceId = env('ELEVENLABS_VOICE_ID');
+const GEORGE_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb'; // ElevenLabs premade voice "George"
+const voiceId = env('ELEVENLABS_VOICE_ID') ?? (apiKey ? GEORGE_VOICE_ID : undefined);
 const modelId = env('ELEVENLABS_MODEL_ID') ?? 'eleven_multilingual_v2';
 const engine: 'elevenlabs' | 'say' = !flag('say') && apiKey && voiceId ? 'elevenlabs' : 'say';
 const sayVoice = pickSayVoice();

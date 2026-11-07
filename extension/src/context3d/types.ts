@@ -76,8 +76,10 @@ export interface MapController {
 }
 
 /** How a host (extension content script or web demo) supplies data and a map surface to the panel. */
+export interface LatLng { readonly lat: number; readonly lng: number }
+
 export interface Context3DHost {
-  load(gnafId: string): Promise<Context3D>;
+  load(gnafId: string, location?: LatLng | null): Promise<Context3D>;
   mount(stage: HTMLElement, data: Context3D): Promise<MapController>;
 }
 

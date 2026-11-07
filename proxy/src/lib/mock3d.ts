@@ -32,14 +32,17 @@ function buildingControlsMock(suburb: string): Upstream {
     area_name: suburb,
     area_level: "suburb",
     hob: {
-      zones_mapped: 5,
+      zones_mapped: 6,
       most_common_height_m: 12,
       pct_most_common: 40,
       legend: [{ label: "≤ 12m", color: "#fef9c3", pct: 52 }, { label: "12–30m", color: "#fbbf24", pct: 30 }, { label: "> 30m", color: "#b45309", pct: 18 }],
       geojson: {
         type: "FeatureCollection",
         features: [
-          // local metres from the home (x east, y north); the subject's terrace strip stays at 12 m
+          // local metres from the home (x east, y north); the Crown St strip stays at 12 m, but the
+          // home's own site (a ~26 m building in OpenStreetMap) carries a 30 m site-specific control
+          // so its limit is never below what already stands there.
+          hobZone(30, -6, -11, 10, 12),
           hobZone(45, -300, 25, -45, 300), // north-west: tower sites
           hobZone(27, -300, -300, -45, 25), // west: mid-rise
           hobZone(12, -45, -300, 45, 300), // Crown St strip incl. the subject

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { PRESETS, splitAddress, type Preset } from "./presets";
+import { presetsFor, splitAddress, type Preset } from "./presets";
 import { HeroMap } from "./components/HeroMap";
 import { StreetPhoto } from "./components/StreetPhoto";
 import { BathIcon, BedIcon, CarIcon, FloorPlan, HomeIcon } from "./components/Illustrations";
@@ -32,6 +32,7 @@ function describe(e: GtEvent): string {
 interface LogLine { readonly at: string; readonly text: string; readonly kind: GtEvent["type"] }
 
 export function DemoClient({ mock }: { mock: boolean }) {
+  const PRESETS = presetsFor(mock);
   const panelRef = useRef<HTMLDivElement>(null);
   const gt = useRef<GtHandle | null>(null);
   const [listing, setListing] = useState<Preset>(PRESETS[0]);
@@ -57,7 +58,7 @@ export function DemoClient({ mock }: { mock: boolean }) {
       gt.current?.destroy();
       gt.current = null;
     };
-  }, []);
+  }, [PRESETS]);
 
   const open = (p: Preset, delayMs = 0) => {
     setListing(p);

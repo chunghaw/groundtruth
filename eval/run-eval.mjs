@@ -194,9 +194,9 @@ function renderMarkdown(rows, s, patterns) {
       lines.push(`| ${r.label.id} | ${esc(r.label.pattern)} | ${esc(r.label.displayed_address)} | ${r.label.expected_state} | ${r.got.error ? 'ERROR' : r.got.state} | ${r.got.confidence ?? ''} | ${esc(r.j.verdict)} | ${esc(r.got.error || r.got.message)} |`);
     }
   }
-  lines.push('', '## All rows', '', '| id | Site | Expected | Got | Conf | Verdict | ms |', '|---|---|---|---|---|---|---|');
+  lines.push('', '## All rows', '', '| id | Site | Expected | Got | Conf | G-NAF returned | G-NAF label | Verdict | ms |', '|---|---|---|---|---|---|---|---|---|');
   for (const r of rows) {
-    lines.push(`| ${r.label.id} | ${r.label.site} | ${r.label.expected_state} | ${r.got.error ? 'ERROR' : r.got.state} | ${r.got.confidence ?? ''} | ${esc(r.j.verdict)} | ${r.got.ms} |`);
+    lines.push(`| ${r.label.id} | ${r.label.site} | ${r.label.expected_state} | ${r.got.error ? 'ERROR' : r.got.state} | ${r.got.confidence ?? ''} | ${r.got.gnafId || ''} | ${r.label.gnaf_id || ''} | ${esc(r.j.verdict)} | ${r.got.ms} |`);
   }
   lines.push('', '_Only states, confidences, G-NAF ids and truncated messages are recorded here. No raw API payloads._', '');
   return lines.join('\n');

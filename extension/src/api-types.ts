@@ -23,6 +23,8 @@ export interface ResolveResponse {
   };
   readonly candidates: readonly Candidate[];
   readonly message?: string;
+  /** The matched home's position (when the proxy knows it); centres the 3D model. */
+  readonly location?: { readonly lat: number; readonly lng: number } | null;
 }
 
 export interface Fact<T = any> { readonly available: boolean; readonly data: T | null; readonly reason?: string }

@@ -214,9 +214,43 @@ export function basicsSection(fact: Fact | undefined): HTMLElement {
     inner ?? h('div', { class: 'sub', style: 'margin-top:6px' }, fact?.reason ?? 'Not available for this home'));
 }
 
-export function factCards(facts: FactsResponse, guideState: { value: string }): HTMLElement[] {
+export const isAvailable = (f: Fact | undefined): f is Fact => !!f && f.available && f.data !== null && f.data !== undefined;
+
+/** One quiet collapsed line instead of a dashed card per missing fact. */
+export function unavailableLine(missing: ReadonlyArray<{ label: string; fact: Fact | undefined }>): HTMLElement | null {
+  if (!missing.length) return null;
+  return h('details', { class: 'na-line', 'aria-label': 'Not available for this home' },
+    h('summary', {}, h('span', {}, `Not available for this home: ${missing.map((m) => m.label).join(', ')}`), h('span', { class: 'why' }, 'why?')),
+    h('ul', {}, ...missing.map((m) => h('li', {}, h('b', {}, m.label), ` ${m.fact?.reason ?? 'no data returned for this home'}`))));
+}
+
+/** `lead` sits right under the verdict (agency quoting, only when it exists); `rest` follows the 3D card. */
+export function factSections(facts: FactsResponse, guideState: { value: string }): { lead: HTMLElement[]; rest: HTMLElement[] } {
   const f = facts.facts;
   const bus: GuideBus = { state: guideState, listeners: [] };
-  return [agentQuotingCard(f.agentQuoting), offerCeilingCard(f.avm, f.agentQuoting, bus), avmCard(f.avm, guideState, bus.listeners), saleHistoryCard(f.saleHistory),
-    streetCard(f.streetProfile), risksCard(f.risks), strataCard(f.strataLevy), basicsSection(f.basics)];
+  const missing: Array<{ label: string; fact: Fact | undefined }> = [];
+  const when = (label: string, fact: Fact | undefined, make: () => HTMLElement): HTMLElement | null => {
+    if (isAvailable(fact)) return make();
+    missing.push({ label, fact });
+    return null;
+  };
+  const lead = [when('agency quoting', f.agentQuoting, () => agentQuotingCard(f.agentQuoting))];
+  const value = isAvailable(f.avm) || isAvailable(f.agentQuoting) ? offerCeilingCard(f.avm, f.agentQuoting, bus) : null;
+  const rest = [
+    value,
+    when('independent value', f.avm, () => avmCard(f.avm, guideState, value ? bus.listeners : undefined)),
+    when('street profile', f.streetProfile, () => streetCard(f.streetProfile)),
+    when('sale history', f.saleHistory, () => saleHistoryCard(f.saleHistory)),
+    when('risk overlays', f.risks, () => risksCard(f.risks)),
+    when('strata levy', f.strataLevy, () => strataCard(f.strataLevy)),
+    isAvailable(f.basics) ? basicsSection(f.basics) : null,
+  ];
+  if (!isAvailable(f.basics)) missing.push({ label: 'basics', fact: f.basics });
+  const keep = (xs: Array<HTMLElement | null>) => xs.filter((x): x is HTMLElement => !!x);
+  return { lead: keep(lead), rest: keep([...rest, unavailableLine(missing)]) };
+}
+
+export function factCards(facts: FactsResponse, guideState: { value: string }): HTMLElement[] {
+  const { lead, rest } = factSections(facts, guideState);
+  return [...lead, ...rest];
 }

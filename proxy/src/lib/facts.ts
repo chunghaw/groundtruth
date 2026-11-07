@@ -45,8 +45,10 @@ const TRIM: Record<Exclude<FactName, "strataLevy">, (d: unknown) => unknown> = {
     if (o && Array.isArray(o.recent_sales)) return { ...o, recent_sales: o.recent_sales.slice(0, 5) };
     return o;
   },
-  avm: (d) => pick(d, ["predicted_price", "predicted_price_low", "predicted_price_high", "prediction_date"]),
-  saleHistory: (d) => (Array.isArray(d) ? d.slice(0, 10).map((x) => pick(x, ["date", "price", "type"])) : null),
+  avm: (d) => pick(d, ["predicted_price", "predicted_price_low", "predicted_price_high", "prediction_date", "confidence_score"]),
+  // Live rows carry `address`; an open listing can appear as { type: "For Sale" } with no date or price.
+  saleHistory: (d) =>
+    Array.isArray(d) ? d.map((x) => pick(x, ["date", "price", "type"])).filter((x): x is Obj => !!x && (typeof x.price === "number" || typeof x.date === "string")).slice(0, 10) : null,
   streetProfile: (d) => {
     if (!isObj(d)) return null;
     return {
@@ -71,14 +73,27 @@ function unavailable(reason: string): Fact {
   return { available: false, data: null, reason };
 }
 
-function toFact(u: Upstream, trim: (d: unknown) => unknown): Fact {
+/**
+ * Buyer-facing wording for the live API's `{ data: null, available: false, reason: "no_data", message }`.
+ * Agent quoting only exists while a home is listed with a tracked agency, so it is usually absent.
+ */
+const NO_DATA: Partial<Record<FactName, string>> = {
+  agentQuoting: "Not listed with a tracked agency right now.",
+  avm: "No automated valuation for this home.",
+  saleHistory: "No recorded sales for this home.",
+  streetProfile: "No street profile for this street.",
+  strataLevy: "No strata levy data for this suburb.",
+};
+
+function toFact(u: Upstream, trim: (d: unknown) => unknown, name?: FactName): Fact {
   const body = (isObj(u.body) ? u.body : {}) as Obj;
   if (u.status === 200) {
     if (body.data == null) {
-      const msg = typeof body.message === "string" ? body.message : typeof body.reason === "string" ? body.reason : "No data for this property.";
-      return unavailable(msg);
+      const fallback = typeof body.message === "string" ? body.message : typeof body.reason === "string" ? body.reason : "No data for this property.";
+      return unavailable((name && body.reason === "no_data" && NO_DATA[name]) || fallback);
     }
     const data = trim(body.data);
+    if (Array.isArray(data) && data.length === 0) return unavailable((name && NO_DATA[name]) || "No data for this property.");
     return data == null ? unavailable("Unexpected data shape.") : { available: true, data };
   }
   if (u.status === 403) return unavailable("Outside the City of Sydney coverage area.");
@@ -114,9 +129,9 @@ export async function getFacts(gnafId: string, fetcher: FactsFetcher): Promise<F
     const suburb = isObj(profile.body) && isObj(profile.body.data) ? profile.body.data.suburb : null;
     if (typeof suburb !== "string" || !suburb) return unavailable("Couldn't determine the suburb.");
     const r = await safe(fetcher, `/v1/suburbs/${encodeURIComponent(suburb)}/market/strata-levies`);
-    return toFact(r, (d) => pick(d, ["area_name", "median_levy_annual", "n_properties"]));
+    return toFact(r, (d) => pick(d, ["area_name", "median_levy_annual", "n_properties"]), "strataLevy");
   })();
-  const results = await Promise.all(names.map(async (n) => [n, toFact(await safe(fetcher, `${base}/${PATHS[n]}`), TRIM[n])] as const));
+  const results = await Promise.all(names.map(async (n) => [n, toFact(await safe(fetcher, `${base}/${PATHS[n]}`), TRIM[n], n)] as const));
   const facts = { ...Object.fromEntries(results), strataLevy: await strata } as Record<FactName, Fact>;
   return { gnafId, facts };
 }

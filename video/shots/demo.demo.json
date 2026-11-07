@@ -1,6 +1,11 @@
 {
   "vars": {
-    "DEMO": "https://groundtruth-tawny-one.vercel.app/demo"
+    "DEMO": "https://groundtruth-tawny-one.vercel.app/demo",
+    "P_UNIT": "live-exact-unit",
+    "P_HOUSE": "live-exact-house",
+    "P_BUILDING": "live-building",
+    "P_OOA": "live-out-of-area",
+    "_old_mock_ids": "exact-unit / exact-house / building / out-of-area"
   },
   "viewport": {
     "width": 1280,
@@ -21,7 +26,7 @@
     }
   ],
   "beats": {
-    "d01-rea-open": {
+    "d01-rea-unit": {
       "setup": [
         {
           "do": "goto",
@@ -37,152 +42,137 @@
           "do": "waitPanel",
           "selector": ".pill.EXACT",
           "timeout": 30000
+        },
+        {
+          "do": "scrollPage",
+          "y": 0
+        },
+        {
+          "do": "selectPage",
+          "selector": ".demo-controls select",
+          "value": "{{P_UNIT}}"
+        },
+        {
+          "do": "waitPanel",
+          "selector": ".pill.EXACT",
+          "timeout": 30000
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt button.strip"
         }
       ]
     },
     "d02-receipt": {
+      "show": [
+        {
+          "do": "clickPanel",
+          "selector": "section.receipt button.strip",
+          "at": 0.5
+        },
+        {
+          "do": "waitPanel",
+          "selector": "section.receipt.open"
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt .rbody dd:nth-of-type(1)",
+          "at": 2.5
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt .rbody dd:nth-of-type(3)",
+          "at": 4.5
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt .rbody dd:nth-of-type(4)",
+          "at": 6.5
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.receipt .rbody dd.checks",
+          "at": 8.5,
+          "optional": true
+        }
+      ]
+    },
+    "d03-next-door": {
       "setup": [
         {
-          "do": "scrollPanelTo",
-          "selector": "section.receipt",
-          "block": "center"
+          "do": "scrollPage",
+          "y": 0
+        },
+        {
+          "do": "selectPage",
+          "selector": ".demo-controls select",
+          "value": "{{P_HOUSE}}"
+        },
+        {
+          "do": "waitPanel",
+          "selector": ".pill.EXACT",
+          "timeout": 30000
         }
       ],
       "show": [
         {
+          "do": "scrollPanelTo",
+          "selector": "section.card.c3",
+          "block": "start",
+          "at": 0.3
+        },
+        {
+          "do": "waitPanel",
+          "selector": "section.card.c3 .c3-lead",
+          "timeout": 20000,
+          "optional": true
+        },
+        {
+          "do": "hoverPanel",
+          "selector": "section.card.c3 .c3-stage",
+          "at": 3.3,
+          "optional": true
+        },
+        {
           "do": "clickPanel",
-          "selector": "section.receipt:not(.open) .strip",
-          "optional": true,
-          "timeout": 400
+          "selector": "section.card.c3 .c3-segs button.c3-seg",
+          "at": 7.3,
+          "optional": true
         },
         {
           "do": "hoverPanel",
-          "selector": "section.receipt dl dd:nth-of-type(1)"
-        },
-        {
-          "do": "hoverPanel",
-          "selector": "section.receipt dl dd:nth-of-type(2)",
-          "at": 3
-        },
-        {
-          "do": "hoverPanel",
-          "selector": "section.receipt dl dd:nth-of-type(3)",
-          "at": 5
-        },
-        {
-          "do": "hoverPanel",
-          "selector": "section.receipt dl dd:nth-of-type(4)",
-          "at": 7
-        },
-        {
-          "do": "hoverPanel",
-          "selector": "button.link",
-          "at": 10.5
+          "selector": "section.card.c3 .c3-stage",
+          "at": 9.3,
+          "optional": true
         }
       ]
     },
-    "d03-facts": {
-      "setup": [],
+    "d04-facts": {
       "show": [
         {
           "do": "scrollPanelTo",
-          "selector": "section[aria-label='Agency quoting accuracy']",
-          "block": "center"
+          "selector": "section[aria-label='Risk overlays']",
+          "block": "center",
+          "at": 0.3,
+          "optional": true
         },
         {
-          "do": "hoverPanel",
-          "selector": "section[aria-label='Agency quoting accuracy'] .big"
+          "do": "scrollPanelTo",
+          "selector": "section[aria-label='Strata levy (suburb median)']",
+          "block": "center",
+          "at": 4,
+          "optional": true
         },
         {
           "do": "scrollPanelTo",
           "selector": "section[aria-label='Microburbs value']",
           "block": "center",
-          "at": 7.5
-        },
-        {
-          "do": "scrollPanelTo",
-          "selector": "section[aria-label='Last sales']",
-          "block": "center",
-          "at": 9.5,
-          "optional": true
-        },
-        {
-          "do": "scrollPanelTo",
-          "selector": "section[aria-label='Street vs suburb']",
-          "block": "center",
-          "at": 11,
-          "optional": true
-        },
-        {
-          "do": "scrollPanelTo",
-          "selector": "section[aria-label='Risk overlays']",
-          "block": "center",
-          "at": 12.5,
+          "at": 7,
           "optional": true
         }
       ]
     },
-    "d04-offer": {
-      "setup": [
-        {
-          "do": "scrollPanelTo",
-          "selector": "section[aria-label='Realistic budget'], section[aria-label='Microburbs value']",
-          "block": "center"
-        }
-      ],
-      "show": [
-        {
-          "do": "typePanel",
-          "selector": "#gt-guide, input[aria-label='Guide price you were quoted']",
-          "text": "$1.1m",
-          "at": 1.0
-        },
-        {
-          "do": "waitPanel",
-          "selector": ".offer-pill, .guide-verdict.below, .guide-verdict.above, .guide-verdict.inside"
-        },
-        {
-          "do": "hoverPanel",
-          "selector": ".offer-pill, .guide-verdict.below, .guide-verdict.above, .guide-verdict.inside"
-        }
-      ]
-    },
-    "d05-domain-unit": {
-      "setup": [
-        {
-          "do": "scrollPage",
-          "y": 0
-        }
-      ],
-      "show": [
-        {
-          "do": "selectPage",
-          "selector": ".demo-controls select",
-          "value": "exact-house"
-        },
-        {
-          "do": "waitPanel",
-          "selector": ".pill.EXACT",
-          "timeout": 20000
-        },
-        {
-          "do": "scrollPanelTo",
-          "selector": "section.receipt",
-          "block": "center"
-        },
-        {
-          "do": "clickPanel",
-          "selector": "section.receipt:not(.open) .strip",
-          "optional": true,
-          "timeout": 400
-        },
-        {
-          "do": "hoverPanel",
-          "selector": "section.receipt dl dd:nth-of-type(4)"
-        }
-      ]
-    },
-    "d06-spa-switch": {
+    "d05-domain-switch": {
       "setup": [
         {
           "do": "scrollPage",
@@ -201,30 +191,29 @@
           "timeout": 15000
         },
         {
-          "do": "hoverPage",
-          "selector": ".demo-log",
-          "optional": true
+          "do": "hoverPanel",
+          "selector": "section.receipt button.strip"
         }
       ]
     },
-    "d07-hidden-unit": {
+    "d06-hidden-unit": {
       "setup": [
         {
           "do": "scrollPage",
           "y": 0
-        }
-      ],
-      "show": [
+        },
         {
           "do": "selectPage",
           "selector": ".demo-controls select",
-          "value": "building"
+          "value": "{{P_BUILDING}}"
         },
         {
           "do": "waitPanel",
           "selector": ".pill.BUILDING",
-          "timeout": 20000
-        },
+          "timeout": 30000
+        }
+      ],
+      "show": [
         {
           "do": "scrollPanelTo",
           "selector": "section[aria-label='Narrow down the unit']",
@@ -242,81 +231,62 @@
         {
           "do": "hoverPanel",
           "selector": "ul.units li:first-child button",
-          "at": 10.5,
+          "at": 10.0,
           "optional": true
         }
       ]
     },
-    "d08-out-of-area": {
-      "setup": [
+    "d07-out-of-area": {
+      "show": [
         {
           "do": "scrollPage",
           "y": 0
-        }
-      ],
-      "show": [
+        },
         {
           "do": "selectPage",
           "selector": ".demo-controls select",
-          "value": "out-of-area"
+          "value": "{{P_OOA}}"
         },
         {
           "do": "waitPanel",
           "selector": ".pill.OUT_OF_AREA",
-          "timeout": 20000
+          "timeout": 30000
         }
       ]
     },
-    "d09-next-door": {
+    "d08-briefing": {
       "setup": [
         {
           "do": "scrollPage",
           "y": 0
-        }
-      ],
-      "show": [
+        },
         {
           "do": "selectPage",
           "selector": ".demo-controls select",
-          "value": "exact-house"
+          "value": "{{P_HOUSE}}"
         },
         {
           "do": "waitPanel",
           "selector": ".pill.EXACT",
-          "timeout": 20000
-        },
-        {
-          "do": "clickPanel",
-          "selector": "[data-gt='next-door-3d-open']",
-          "optional": true,
-          "timeout": 4000
-        },
-        {
-          "do": "waitPanel",
-          "selector": "[data-gt='next-door-3d']",
-          "optional": true,
-          "timeout": 4000
+          "timeout": 30000
         }
-      ]
-    },
-    "d10-briefing": {
-      "setup": [],
+      ],
       "show": [
         {
           "do": "clickPanel",
-          "selector": "button.brief-btn, [data-gt='briefing-play']",
-          "optional": true,
-          "timeout": 4000
+          "selector": "button.brief-btn",
+          "at": 1.0,
+          "optional": true
         },
         {
           "do": "waitPanel",
           "selector": ".brief-cap span.now",
           "optional": true,
-          "timeout": 6000
+          "timeout": 8000
         }
       ]
     },
-    "d13-close": {
+    "d11-close": {
       "setup": [
         {
           "do": "scrollPage",

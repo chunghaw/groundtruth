@@ -3,7 +3,6 @@ node_modules
 .env*
 !.env.example
 api-output
-.data
 .vercel
 *.csv
 tests

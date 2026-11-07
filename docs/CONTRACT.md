@@ -22,8 +22,11 @@ Response:
                "checks": { "unit": true, "number": true, "street": true, "suburb": true },
                "geocodeCandidates": 10 },
   "candidates": [ { "gnafId": "...", "label": "902/417-419 Bourke Street, Surry Hills", "bedrooms": 2 | null } ],
+  "location": { "lat": -33.88, "lng": 151.21 } | null,   // optional, additive (v1.1)
   "message": "human-readable reason when not EXACT" }
 ```
+- `location` (optional): EXACT → the matched home's coordinates; BUILDING → the building's, both from the supplied address CSV. Absent/null when the CSV has no row for it — clients centre the 3D view on it when present.
+- `candidates[].bedrooms` comes from the supplied CSV when known; a buyer-typed `bedrooms` narrows BUILDING candidates locally (no extra API calls).
 - EXACT: one home, all checks pass. BUILDING: street address matched but unit missing/unmatched — `candidates` lists units at that street number (from supplied CSV). CHOOSE: several plausible homes. OUT_OF_AREA: suburb not in the 29 City of Sydney suburbs — no Microburbs call made.
 - A wrong home is worse than NO_MATCH: only return EXACT when unit+number+street+suburb all agree.
 

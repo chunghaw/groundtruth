@@ -1,12 +1,12 @@
 /** Content-script host: data via the background worker, map inside an extension-page iframe. */
-import type { Context3D, Context3DHost, HeadroomInsight, MapController, Overlay } from './types';
+import type { Context3D, Context3DHost, HeadroomInsight, LatLng, MapController, Overlay } from './types';
 import { isContext3D } from './types';
 
 const reducedMotion = (): boolean => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
 
 export const extensionContext3DHost: Context3DHost = {
-  async load(gnafId: string): Promise<Context3D> {
-    const r = (await chrome.runtime.sendMessage({ type: 'gt:context3d', gnafId })) as { ok: boolean; data?: unknown; error?: string } | undefined;
+  async load(gnafId: string, location?: LatLng | null): Promise<Context3D> {
+    const r = (await chrome.runtime.sendMessage({ type: 'gt:context3d', gnafId, location: location ?? null })) as { ok: boolean; data?: unknown; error?: string } | undefined;
     if (!r?.ok || !isContext3D(r.data)) throw new Error(r?.error ?? 'Extension background not responding.');
     return r.data;
   },

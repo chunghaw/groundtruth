@@ -7,15 +7,19 @@
   "tailPadSec": 0.3,
   "beats": [
     {
-      "id": "x1-receipt", "window": "0-4 s", "maxSec": 4,
-      "vo": "Groundtruth reads only the address, and shows an address match receipt.",
+      "id": "x1-receipt",
+      "window": "0-4 s",
+      "maxSec": 4,
+      "vo": "Groundtruth reads only the address, and proves which home it is.",
       "caption": "[[Address match]] receipt",
       "action": "Demo page, receipt in view."
     },
     {
-      "id": "x2-building", "window": "4-8 s", "maxSec": 4.5,
+      "id": "x2-building",
+      "window": "4-8 s",
+      "maxSec": 4.5,
       "vo": "Hidden unit? Tap the bedrooms to narrow it down.",
-      "caption": "Hidden unit → tap [[bedrooms]]",
+      "caption": "Hidden unit \u2192 tap [[bedrooms]]",
       "action": "Select the Building preset, tap 2."
     }
   ]

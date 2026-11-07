@@ -187,6 +187,22 @@ details.basics summary::-webkit-details-marker { display: none; }
 details.basics summary::after { content: "+"; font-size: 14px; line-height: .8; } details.basics[open] summary::after { content: "−"; }
 details.basics > :not(summary) { margin: 0 14px 12px; width: calc(100% - 28px); }
 
+details.na-line { padding: 2px 2px 0; font-size: var(--t-xs); color: var(--ink-4); }
+details.na-line summary { cursor: pointer; list-style: none; display: flex; gap: 6px; align-items: baseline; line-height: 1.45; }
+details.na-line summary::-webkit-details-marker { display: none; }
+details.na-line summary .why { color: var(--ink-3); text-decoration: underline dotted; text-underline-offset: 2px; white-space: nowrap; }
+details.na-line summary:hover .why, details.na-line summary:focus-visible .why { color: var(--ink); }
+details.na-line[open] summary .why { text-decoration: none; }
+details.na-line ul { margin: 6px 0 0; padding-left: 14px; display: grid; gap: 3px; color: var(--ink-3); }
+details.na-line b { font-weight: 600; color: var(--ink-2); }
+
+/* Verdict slot: reserves the verdict's height while the 3D headroom finding loads, so the swap doesn't shift the page. */
+.verdict-slot { min-height: 104px; }
+.verdict-slot > .verdict.pending { animation: none; }
+.verdict-slot > .verdict:not(.pending) { animation: gt-fade var(--dur, .2s) var(--ease, ease-out) both; }
+@keyframes gt-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .verdict-slot > .verdict { animation: none !important; } }
+
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); border-radius: var(--r-sm); padding: 8px 12px; cursor: pointer; font-weight: 600; font-size: var(--t-sm); transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease), background var(--dur) var(--ease); }
 .btn:hover { opacity: .88; }
 .btn:active { transform: translateY(1px); }

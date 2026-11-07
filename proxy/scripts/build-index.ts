@@ -18,7 +18,7 @@ async function main(): Promise<void> {
   const usable = rows.filter((r) => r.number && r.street && r.suburb);
   const index = buildIndex(usable);
   mkdirSync(".data", { recursive: true });
-  writeFileSync(".data/address-index.json", JSON.stringify(usable.map(({ gnafId, unit, number, street, suburb }) => ({ gnafId, unit, number, street, suburb }))));
+  writeFileSync(".data/address-index.json", JSON.stringify(usable.map(({ gnafId, unit, number, street, suburb, label, postcode, lat, lng, bedrooms, flats }) => ({ gnafId, unit, number, street, suburb, label, postcode, lat, lng, bedrooms, flats }))));
   console.log(`rows=${rows.length} usable=${usable.length} indexed=${index.size} withGnaf=${usable.filter((r) => r.gnafId).length} withUnit=${usable.filter((r) => r.unit).length}`);
   console.log("sample:", usable.slice(0, 3));
 }

@@ -38,11 +38,11 @@ describe('offer ceiling card', () => {
     expect(host.querySelector('.range .guide')).not.toBeNull();
   });
 
-  it('works AVM-only and shows unavailable with neither', () => {
+  it('works AVM-only and hides itself with neither', () => {
     const host = mountCards(facts(null, AVM), { value: '1.2m' });
     expect(host.querySelector('.offer-pill')?.textContent).toBe('Guide above our range');
     document.body.innerHTML = '';
     const none = mountCards(facts(null, null), { value: '' });
-    expect(none.querySelector('.card.offer')?.textContent).toMatch(/Not enough data/);
+    expect(none.querySelector('.card.offer')).toBeNull(); // hidden, not a dead card
   });
 });
