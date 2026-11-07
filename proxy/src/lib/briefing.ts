@@ -2,6 +2,7 @@
  * Spoken 30-second inspection briefing: a short, plain-English script built from the facts.
  * Every number is spoken as words, rounded for the ear ("about one point one million").
  */
+import { createHash } from "node:crypto";
 import type { Fact } from "./facts";
 
 export const MAX_WORDS = 75;
@@ -173,4 +174,207 @@ export function buildBriefingScript(facts: Partial<Record<string, Fact>>, contex
   }
   if (!chosen.length) return "Groundtruth has not enough data on this home for a briefing yet. Check the panel for what is available.";
   return [...chosen].sort((a, b) => a.order - b.order).map((c) => c.text).join(" ");
+}
+
+/* ------------------------------------------------------------------ */
+/* Human-sounding script via OpenAI, grounded in the same facts.       */
+/* ------------------------------------------------------------------ */
+
+const round = (n: number | null, step = 1): number | null => (n === null ? null : Number((Math.round(n / step) * step).toFixed(2)));
+
+function riskNames(risks: unknown): string[] {
+  if (!isObj(risks)) return [];
+  return Object.entries(risks)
+    .flatMap(([k, v]) => (Array.isArray(v) ? v : [v]).map((x) => ({ k, x })))
+    .filter(({ x }) => isObj(x) && x.on_property === true)
+    .map(({ k, x }) => (isObj(x) && typeof x.name === "string" ? x.name : k.replace(/_/g, " ")));
+}
+
+function lastSold(sales: unknown): { price: number; year: number | null } | null {
+  if (!Array.isArray(sales)) return null;
+  const sold = sales
+    .filter((x) => isObj(x) && num(x, ["price"]) !== null && (!str(x, ["type"]) || /sold/i.test(str(x, ["type"])!)))
+    .sort((a, b) => String(str(b, ["date"]) ?? "").localeCompare(String(str(a, ["date"]) ?? "")))[0];
+  if (!sold) return null;
+  const year = (str(sold, ["date"]) ?? "").match(/^\d{4}/)?.[0];
+  return { price: num(sold, ["price"])!, year: year ? Number(year) : null };
+}
+
+function nextDoor(ctx: unknown): Obj | null {
+  if (!isObj(ctx) || ctx.available === false) return null;
+  const t = isObj(ctx.tallestNeighbour) ? ctx.tallestNeighbour : null;
+  const storeys = num(t, ["storeys"]) ?? num(ctx, ["next_door_max_storeys", "max_storeys", "maxStoreys", "storeys"]);
+  const metres = num(ctx, ["next_door_max_height_m", "nextDoorMaxHeightM", "max_height_m", "maxHeightM", "height_limit_m", "heightLimitM"]);
+  const direction = str(t, ["direction"]);
+  if (storeys === null && metres === null) return null;
+  return { planning_allows_storeys_nearby: storeys, planning_allows_height_m: metres, direction };
+}
+
+const dropNulls = (o: Obj): Obj =>
+  Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null && v !== undefined && !(Array.isArray(v) && !v.length) && !(isObj(v) && !Object.keys(v).length)));
+
+/** The grounded facts the LLM may use: the same sources as the template script, flattened and rounded. */
+export function briefingFacts(facts: Partial<Record<string, Fact>>, context3d: unknown = null): Obj {
+  const basics = factData(facts.basics);
+  const avm = factData(facts.avm);
+  const q = factData(facts.agentQuoting);
+  const isUnit = /unit|apartment|flat|strata/i.test(str(basics, ["dwelling_type"]) ?? "");
+  const rateRaw = num(q, ["underquote_rate_pct", "underquote_rate"]);
+  const ratePct = rateRaw === null ? null : rateRaw <= 1 ? rateRaw * 100 : rateRaw;
+  const total = num(q, ["total_sales"]);
+  const street = factData(facts.streetProfile);
+  const agency = isObj(q)
+    ? dropNulls({
+        name: str(q, ["agency_name"]),
+        style: str(q, ["cohort"]),
+        typical_sold_vs_guide_pct: round(num(q, ["median_deviation_pct", "avg_gap_pct"]), 0.1),
+        recent_sales_tracked: total,
+        recent_sales_above_guide: ratePct !== null && total !== null ? Math.round((ratePct / 100) * total) : null,
+        likely_sale_price_for_this_home: round(num(q, ["likely_sale_price"]), 1000),
+        advertised_guide: num(q, ["asking_price"]),
+      })
+    : null;
+  return dropNulls({
+    dwelling_type: str(basics, ["dwelling_type"]),
+    bedrooms: num(basics, ["bed_count"]),
+    bathrooms: num(basics, ["bath_count"]),
+    car_spaces: num(basics, ["parking_count"]),
+    microburbs_estimate: isObj(avm)
+      ? dropNulls({ price: round(num(avm, ["predicted_price"]), 1000), low: round(num(avm, ["predicted_price_low"]), 1000), high: round(num(avm, ["predicted_price_high"]), 1000) })
+      : null,
+    last_sold: lastSold(factData(facts.saleHistory)),
+    street_typical_price: !isUnit && isObj(street) ? round(num(street.profile, ["current_price"]), 1000) : null,
+    street_name: isObj(street) ? str(street, ["street"]) : null,
+    agency,
+    risk_overlays_on_property: riskNames(factData(facts.risks)),
+    strata_levy_per_year: isUnit ? round(num(factData(facts.strataLevy), ["median_levy_annual", "levy_annual", "median_levy"]), 10) : null,
+    next_door: nextDoor(context3d ?? factData(facts.context3d)),
+  });
+}
+
+export const LLM_MODEL = "gpt-4.1-mini";
+const LLM_TIMEOUT_MS = 6_000;
+const LLM_MAX_WORDS = 85;
+
+export const SYSTEM_PROMPT = [
+  "You are a friendly, plain-spoken Sydney buyer's advocate recording a 30-second voice note for a friend about to inspect this home.",
+  "Use ONLY the facts provided; never invent numbers, names or claims. If a fact is missing, don't mention it.",
+  "Round numbers for speech and write them as digits (for example $830,000, $1.1 million, 4%, 7 of 10).",
+  "At most 75 words. Warm, conversational, a little personality, contractions. No bullet points, no markdown, no greetings like 'Hey there'.",
+  "End with one practical tip for the inspection. Don't give financial advice; describe the facts.",
+].join(" ");
+
+/** Every number in the facts (including digits inside strings such as dates). */
+function factNumbers(v: unknown, out: number[] = []): number[] {
+  if (typeof v === "number" && Number.isFinite(v)) out.push(v);
+  else if (typeof v === "string") for (const m of v.match(/\d+(?:\.\d+)?/g) ?? []) out.push(Number(m));
+  else if (Array.isArray(v)) v.forEach((x) => factNumbers(x, out));
+  else if (isObj(v)) Object.values(v).forEach((x) => factNumbers(x, out));
+  return out;
+}
+
+/** Numbers as the reply states them: "$1.1 million" → 1100000, "830k" → 830000, "4%" → 4. */
+export function replyNumbers(text: string): number[] {
+  const re = /(\d[\d,]*(?:\.\d+)?)\s*(million|mil|m\b|k\b|thousand)?/gi;
+  const out: number[] = [];
+  for (const m of text.matchAll(re)) {
+    const base = Number(m[1].replace(/,/g, ""));
+    if (!Number.isFinite(base)) continue;
+    const unit = (m[2] ?? "").toLowerCase();
+    out.push(base * (unit.startsWith("m") ? 1_000_000 : unit ? 1_000 : 1));
+  }
+  return out;
+}
+
+/** True when every number in the reply matches a fact after rounding (≤5% or ≤0.5 off). */
+export function numbersGrounded(reply: string, facts: unknown): boolean {
+  const known = factNumbers(facts);
+  return replyNumbers(reply).every((r) => known.some((k) => Math.abs(r - k) <= Math.max(0.5, Math.abs(k) * 0.05)));
+}
+
+export function cleanReply(text: string): string {
+  let s = text
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/^\s*(?:[-*•]|\d+\.)\s+/gm, "")
+    .replace(/[*_#`>]+/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (wordCount(s) > LLM_MAX_WORDS) {
+    const words = s.split(" ").slice(0, LLM_MAX_WORDS).join(" ");
+    const cut = words.lastIndexOf(".");
+    s = cut > 40 ? words.slice(0, cut + 1) : `${words}.`;
+  }
+  return s;
+}
+
+export interface LlmOptions {
+  readonly apiKey?: string;
+  readonly fetchImpl?: typeof fetch;
+}
+
+/** One OpenAI call; null on any failure. Never logs the key. */
+async function askOpenAI(factsJson: string, opts: Required<Pick<LlmOptions, "apiKey">> & LlmOptions): Promise<string | null> {
+  const f = opts.fetchImpl ?? fetch;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), LLM_TIMEOUT_MS);
+  try {
+    const res = await f("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      signal: ctrl.signal,
+      headers: { Authorization: `Bearer ${opts.apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: LLM_MODEL,
+        temperature: 0.7,
+        max_tokens: 220,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: factsJson },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      console.error("[groundtruth] briefing llm status", res.status);
+      return null;
+    }
+    const body = (await res.json()) as { choices?: Array<{ message?: { content?: unknown } }> };
+    const content = body.choices?.[0]?.message?.content;
+    return typeof content === "string" && content.trim() ? content : null;
+  } catch (e) {
+    console.error("[groundtruth] briefing llm failed", e instanceof Error ? e.name : "error");
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const llmCache: Map<string, string> = ((globalThis as { __gtLlmCache?: Map<string, string> }).__gtLlmCache ??= new Map());
+const LLM_CACHE_MAX = 128;
+
+/**
+ * The spoken script: an OpenAI rewrite of the grounded facts when OPENAI_API_KEY is set and the reply passes
+ * validation (every number traceable to a fact), otherwise the deterministic template.
+ */
+export async function composeBriefing(
+  gnafId: string,
+  facts: Partial<Record<string, Fact>>,
+  context3d: unknown = null,
+  opts: LlmOptions = {},
+): Promise<{ script: string; source: "llm" | "template" }> {
+  const template = buildBriefingScript(facts, context3d);
+  const apiKey = opts.apiKey ?? process.env.OPENAI_API_KEY?.trim();
+  const grounded = briefingFacts(facts, context3d);
+  if (!apiKey || !Object.keys(grounded).length) return { script: template, source: "template" };
+  const factsJson = JSON.stringify(grounded);
+  const key = `${gnafId}:${createHash("sha256").update(factsJson).digest("hex").slice(0, 16)}`;
+  const hit = llmCache.get(key);
+  if (hit) return { script: hit, source: "llm" };
+  const raw = await askOpenAI(factsJson, { ...opts, apiKey });
+  const reply = raw ? cleanReply(raw) : "";
+  if (!reply || wordCount(reply) < 12 || !numbersGrounded(reply, grounded)) {
+    if (raw) console.error("[groundtruth] briefing llm reply rejected; using template");
+    return { script: template, source: "template" };
+  }
+  llmCache.set(key, reply);
+  while (llmCache.size > LLM_CACHE_MAX) llmCache.delete(llmCache.keys().next().value!);
+  return { script: reply, source: "llm" };
 }

@@ -1,6 +1,6 @@
 import type { FactsResponse } from '../api-types';
 import { h } from './dom';
-import { money, pct, pickNumber, pickString } from './format';
+import { money, parseGuidePrice, pct, pickNumber, pickString } from './format';
 import type { HeadroomInsight } from '../context3d/types';
 
 export type Tone = 'ok' | 'warn' | 'bad' | 'info' | 'neutral';
@@ -15,6 +15,63 @@ export interface Verdict {
 
 const UNDERQUOTE_ALERT = 0.4;
 
+/** "3.9" from 3.9, "12" from 12.4: one decimal under 10, whole numbers above. */
+export function fmtPct(n: number): string {
+  const a = Math.abs(n);
+  return a.toFixed(a < 10 ? 1 : 0).replace(/\.0$/, '');
+}
+
+/** Underquote rate as a 0-1 fraction, or null. */
+export function underquoteRate(d: unknown): number | null {
+  const raw = pickNumber(d, ['underquote_rate_pct', 'underquote_rate', 'underquoting_rate', 'pct_underquoted']);
+  return raw === null ? null : raw > 1 ? raw / 100 : raw;
+}
+
+/** "7 of 10 recent sales sold above the guide", or null when the count or rate is missing. */
+export function salesAboveGuide(d: unknown): string | null {
+  const rate = underquoteRate(d);
+  const n = pickNumber(d, ['total_sales', 'n_sales', 'sample_size']);
+  if (rate === null || n === null || n < 1 || rate < 0 || rate > 1) return null;
+  const total = Math.round(n);
+  const above = Math.min(total, Math.round(rate * total));
+  return `${above} of ${total} recent sale${total === 1 ? '' : 's'} sold above the guide`;
+}
+
+export interface PriceEstimate {
+  readonly price: number;
+  readonly label: string;
+  readonly range: { readonly low: number; readonly high: number } | null;
+}
+
+/** Headline price: agency likely sale price → Microburbs AVM → buyer's guide × (1 + agency median deviation). */
+export function priceEstimate(facts: FactsResponse | null, guideInput = ''): PriceEstimate | null {
+  const aq = facts?.facts.agentQuoting;
+  const q = aq?.available ? aq.data : null;
+  const likely = pickNumber(q, ['likely_sale_price']);
+  if (likely !== null && likely > 0) return { price: likely, label: 'Based on this agency’s guide-vs-sold record', range: null };
+  const avm = facts?.facts.avm;
+  const a = avm?.available ? avm.data : null;
+  const mid = pickNumber(a, ['predicted_price', 'value', 'estimate', 'mid']);
+  if (mid !== null && mid > 0) {
+    const low = pickNumber(a, ['predicted_price_low', 'low', 'lower']);
+    const high = pickNumber(a, ['predicted_price_high', 'high', 'upper']);
+    return { price: mid, label: 'Microburbs estimate', range: low !== null && high !== null && high > low ? { low, high } : null };
+  }
+  const guide = parseGuidePrice(guideInput);
+  const dev = pickNumber(q, ['median_deviation_pct', 'avg_gap_pct']);
+  if (guide !== null && dev !== null) {
+    return { price: Math.round(guide * (1 + dev / 100)), label: `Your guide adjusted by this agency’s typical ${dev >= 0 ? '+' : '−'}${fmtPct(dev)}%`, range: null };
+  }
+  return null;
+}
+
+export function priceBlockEl(p: PriceEstimate): HTMLElement {
+  return h('div', { class: 'price-block', role: 'status' },
+    h('p', { class: 'kicker' }, 'Estimated price'),
+    h('p', { class: 'price' }, 'Likely to sell for about ', h('b', {}, money(p.price))),
+    h('p', { class: 'psub' }, p.range ? `${p.label} · 80% range ${money(p.range.low)}–${money(p.range.high)}` : p.label));
+}
+
 /** Verdict from the agency's guide-vs-sold record; null when there is none (most live homes). */
 export function quotingVerdict(facts: FactsResponse | null): Verdict | null {
   const aq = facts?.facts.agentQuoting;
@@ -22,20 +79,21 @@ export function quotingVerdict(facts: FactsResponse | null): Verdict | null {
   const agency = pickString(d, ['agency_name', 'agency']);
   const n = pickNumber(d, ['total_sales', 'n_sales', 'sample_size']);
   const dev = pickNumber(d, ['median_deviation_pct', 'avg_gap_pct']);
-  const rateRaw = pickNumber(d, ['underquote_rate_pct', 'underquote_rate', 'underquoting_rate', 'pct_underquoted']);
-  const rate = rateRaw === null ? null : rateRaw > 1 ? rateRaw / 100 : rateRaw;
-  const who = [agency, n !== null ? `${n} tracked sales` : null].filter(Boolean).join(' · ') || null;
+  const rate = underquoteRate(d);
+  const above = salesAboveGuide(d);
+  const who = [above ?? (n !== null ? `${n} tracked sales` : null), agency].filter(Boolean).join(' · ') || null;
   if (dev !== null && Math.abs(dev) >= 0.5) {
     const over = dev > 0;
     return {
       kicker: 'Price guide check',
-      headline: ['Agency usually sells ', `${Math.abs(dev).toFixed(Math.abs(dev) < 10 ? 1 : 0).replace(/\.0$/, '')}% ${over ? 'over' : 'under'}`, ' guide'],
+      headline: ['Agency usually sells ', `${fmtPct(dev)}% ${over ? 'over' : 'under'}`, ' guide'],
       sub: who,
       tone: over && (dev >= 5 || (rate ?? 0) >= UNDERQUOTE_ALERT) ? 'warn' : 'ok',
     };
   }
   if (rate !== null) {
-    return { kicker: 'Price guide check', headline: ['', pct(rate), ' of this agency’s sales beat the guide'], sub: who, tone: rate >= UNDERQUOTE_ALERT ? 'warn' : 'ok' };
+    const head: [string, string, string] = above ? ['', above.replace(/ sold above the guide$/, ''), ' sold above the guide'] : ['', pct(rate), ' of this agency’s sales sold above the guide'];
+    return { kicker: 'Price guide check', headline: head, sub: agency, tone: rate >= UNDERQUOTE_ALERT ? 'warn' : 'ok' };
   }
   return null;
 }

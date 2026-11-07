@@ -2,6 +2,7 @@ import type { Fact, FactsResponse } from '../api-types';
 import { h } from './dom';
 import { compareGuide, money, parseGuidePrice, pct, pickNumber, pickString, type AvmRange } from './format';
 import { offerCeilingCard, type GuideBus } from './offerCard';
+import { fmtPct, salesAboveGuide } from './verdict';
 
 const UNDERQUOTE_ALERT = 0.4; // 40%+ of the agency's recent sales went above guide
 
@@ -61,6 +62,11 @@ function deviationScale(dev: number): HTMLElement {
     h('div', { class: 'scale-labels' }, h('span', {}, `${lo}%`), h('span', { style: `left:${pos(0)}` }, 'at guide'), h('span', {}, `+${hi}%`)));
 }
 
+const signedPct = (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${fmtPct(n)}%`;
+
+/** "Mild Underquoter" → "Mild underquoter". */
+const cohortLabel = (c: string) => c.charAt(0).toUpperCase() + c.slice(1).toLowerCase();
+
 export function agentQuotingCard(fact: Fact | undefined): HTMLElement {
   const d = fact?.data;
   const rate = pickNumber(d, ['underquote_rate_pct', 'underquote_rate', 'underquoting_rate', 'pct_underquoted']);
@@ -71,22 +77,26 @@ export function agentQuotingCard(fact: Fact | undefined): HTMLElement {
     if (r === null && !cohort) return null;
     const agency = pickString(data, ['agency_name', 'agency']);
     const dev = pickNumber(data, ['median_deviation_pct', 'avg_gap_pct']);
-    const n = pickNumber(data, ['total_sales', 'n_sales', 'sample_size']);
-    const likely = pickNumber(data, ['likely_sale_price']);
+    const above = salesAboveGuide(data);
+    const headline = above ?? (r !== null ? `${pct(r)} of recent sales sold above the guide` : null);
+    const typical = dev !== null
+      ? `Typically ${fmtPct(dev)}% ${dev >= 0 ? 'over' : 'under'} the advertised price`
+      : null;
     const recent = Array.isArray(data?.recent_sales) ? data.recent_sales.slice(0, 3) : [];
     const rows = recent.map((x: any) => {
       const diff = pickNumber(x, ['diff_pct']);
       return h('li', {}, h('span', { class: 'when' }, String(x.sold_date ?? x.date ?? '').slice(0, 10) || 'recent'),
-        h('span', { class: 'what' }, `${money(pickNumber(x, ['guide_price']))} → ${money(pickNumber(x, ['sold_price']))}`),
-        diff !== null ? h('span', { class: `delta ${diff > 3 ? 'up' : diff < -3 ? 'down' : ''}` }, `${diff > 0 ? '+' : ''}${diff}%`) : null);
+        h('span', { class: 'what' }, `Guide ${money(pickNumber(x, ['guide_price']))} → Sold ${money(pickNumber(x, ['sold_price']))}`),
+        diff !== null ? h('span', { class: `delta ${diff > 3 ? 'up' : diff < -3 ? 'down' : ''}` }, `(${signedPct(diff)})`) : null);
     });
     return [
-      r !== null ? bigFigure(pct(r), 'of sales beat the guide') : h('div', { class: 'big' }, cohort ?? ''),
-      h('div', { class: 'sub' }, [agency, cohort, n !== null ? `${n} tracked sales` : null].filter(Boolean).join(' · ')),
+      headline ? h('div', { class: 'big aq-head' }, headline) : null,
+      typical || agency ? h('div', { class: 'sub' }, [typical, agency].filter(Boolean).join(' · ')) : null,
+      cohort ? h('span', { class: 'cohort-pill' }, cohortLabel(cohort)) : null,
+      dev !== null ? h('div', { class: 'scale-title' }, `How far sales landed from the guide (median ${signedPct(dev)})`) : null,
       dev !== null ? deviationScale(dev) : null,
-      likely !== null ? h('div', { class: 'kv' }, h('span', {}, 'Likely sale price'), h('b', {}, money(likely))) : null,
       rows.length ? h('ol', { class: 'tl', 'aria-label': 'Recent agency sales: guide vs sold' }, ...reveal(rows, 2, 'sales')) : null,
-      alert ? h('div', { class: 'note', role: 'note' }, 'Treat the advertised guide as a floor, not an estimate.') : null,
+      alert ? h('div', { class: 'note', role: 'note' }, 'Treat the advertised guide as a floor, not an estimate') : null,
     ].filter(Boolean) as HTMLElement[];
   }, alert ? 'alert' : '', 'Microburbs · agency sales, guide vs sold');
 }

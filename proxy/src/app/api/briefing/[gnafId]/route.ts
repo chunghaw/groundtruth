@@ -1,8 +1,8 @@
 import { clientKey, corsHeaders, guard, isGnafId, json, preflight, rateLimited } from "@/lib/http";
 import { getFacts } from "@/lib/facts";
 import { getUpstream } from "@/lib/microburbs";
-import { buildBriefingScript } from "@/lib/briefing";
-import { synthesize, TtsCache } from "@/lib/tts";
+import { composeBriefing } from "@/lib/briefing";
+import { synthesizeAny, TtsCache } from "@/lib/tts";
 import { getContext3D } from "@/lib/context3d";
 
 export const runtime = "nodejs";
@@ -35,8 +35,8 @@ async function readContext3d(req: Request): Promise<unknown> {
 }
 
 /**
- * POST /api/briefing/:gnafId → audio/mpeg (script in X-Briefing-Script, URI-encoded) when ELEVENLABS_API_KEY is set
- * and TTS succeeds; otherwise JSON { script, audio: null } and the client speaks it with browser TTS.
+ * POST /api/briefing/:gnafId → audio/mpeg (script in X-Briefing-Script, URI-encoded) when ElevenLabs or OpenAI TTS
+ * succeeds (script written by OpenAI when OPENAI_API_KEY is set and it validates); otherwise JSON { script, audio: null } and the client speaks it with browser TTS.
  */
 export async function POST(req: Request, ctx: { params: Promise<{ gnafId: string }> }): Promise<Response> {
   const blocked = guard(req);
@@ -47,20 +47,21 @@ export async function POST(req: Request, ctx: { params: Promise<{ gnafId: string
   let script: string;
   try {
     const [{ facts }, ctx3d] = await Promise.all([getFacts(gnafId, getUpstream), context3d ? Promise.resolve(context3d) : context3dFor(gnafId)]);
-    script = buildBriefingScript(facts, ctx3d);
+    ({ script } = await composeBriefing(gnafId, facts, ctx3d));
   } catch (e) {
     console.error("[groundtruth] briefing facts failed", e instanceof Error ? e.message : e);
     return json(req, { error: "briefing failed" }, 500);
   }
 
-  const apiKey = process.env.ELEVENLABS_API_KEY?.trim();
-  if (!apiKey) return json(req, { script, audio: null });
+  const elevenLabsKey = process.env.ELEVENLABS_API_KEY?.trim() || undefined;
+  const openAiKey = process.env.OPENAI_API_KEY?.trim() || undefined;
+  if (!elevenLabsKey && !openAiKey) return json(req, { script, audio: null });
 
   let audio = cache.get(gnafId, script) ?? null;
   if (!audio) {
     // Voice costs money: a tighter bucket than the general guard, only for uncached synth calls.
     if (rateLimited(`tts:${clientKey(req)}`, 6, 3)) return json(req, { script, audio: null, reason: "tts_rate_limited" });
-    audio = await synthesize(script, { apiKey, voiceId: process.env.ELEVENLABS_VOICE_ID?.trim() });
+    audio = await synthesizeAny(script, { elevenLabsKey, openAiKey, voiceId: process.env.ELEVENLABS_VOICE_ID?.trim() });
     if (!audio) return json(req, { script, audio: null });
     cache.set(gnafId, script, audio);
   }

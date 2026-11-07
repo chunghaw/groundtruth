@@ -198,6 +198,14 @@ details.na-line b { font-weight: 600; color: var(--ink-2); }
 
 /* Verdict slot: reserves the verdict's height while the 3D headroom finding loads, so the swap doesn't shift the page. */
 .verdict-slot { min-height: 104px; }
+.price-block { padding: 2px 2px 10px; margin-bottom: 6px; border-bottom: 1px solid var(--line, rgba(0,0,0,.08)); }
+.price-block .kicker { font: 600 var(--t-xs)/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.price-block .price { margin-top: 6px; font: 500 var(--t-lg, 17px)/1.2 var(--serif); color: var(--ink-2, var(--ink)); }
+.price-block .price b { display: block; font: 650 34px/1.05 var(--serif); letter-spacing: -.02em; color: var(--ink); }
+.price-block .psub { margin-top: 4px; font-size: var(--t-sm); color: var(--ink-3); }
+.card .aq-head { font-size: var(--t-lg, 17px); line-height: 1.25; }
+.card .cohort-pill { display: inline-block; margin-top: 8px; padding: 3px 9px; border-radius: 999px; font: 600 var(--t-xs)/1.4 var(--sans); background: var(--warn-wash); color: var(--warn); }
+.card .scale-title { margin-top: 10px; font: 600 var(--t-xs)/1.3 var(--sans); color: var(--ink-3); }
 .verdict-slot > .verdict.pending { animation: none; }
 .verdict-slot > .verdict:not(.pending) { animation: gt-fade var(--dur, .2s) var(--ease, ease-out) both; }
 @keyframes gt-fade { from { opacity: 0; } to { opacity: 1; } }

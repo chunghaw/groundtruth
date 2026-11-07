@@ -29,8 +29,15 @@ describe('Panel', () => {
     const t = text(p);
     expect(t).toContain('Exact');
     expect(t).toContain('GANSW1');
-    expect(t).toContain('62% of sales beat the guide');
-    expect(t).toContain('+6.7%');
+    expect(t).toContain('13 of 21 recent sales sold above the guide');
+    expect(t).toContain('Guide $900k → Sold $960k');
+    expect(t).toContain('(+6.7%)');
+    expect(t).toContain('Treat the advertised guide as a floor, not an estimate');
+    expect(q(p, '.cohort-pill')[0].textContent).toBe('Underquoter');
+    // AVM drives the price block when there is no agency likely price.
+    expect(q(p, '.body > *')[0].classList.contains('price-block')).toBe(true);
+    expect(q(p, '.price-block')[0].textContent).toContain('Likely to sell for about $1m');
+    expect(q(p, '.price-block')[0].textContent).toContain('Microburbs estimate');
     expect(q(p, '.card.alert').length).toBe(1);
     expect(t).toContain('$1m');
     expect(t).toContain('no street row');
@@ -64,7 +71,7 @@ describe('Panel', () => {
       risks: { available: true, data: {} },
     } } });
     const order = [...q(p, '.body > *')].map((e) => e.getAttribute('aria-label') ?? e.className.split(' ')[0]);
-    expect(order.slice(0, 4)).toEqual(['verdict-slot', 'Match receipt', 'What can rise next door', 'Realistic budget']);
+    expect(order.slice(0, 5)).toEqual(['price-block', 'verdict-slot', 'Match receipt', 'What can rise next door', 'Realistic budget']);
     expect(q(p, '.verdict-slot .verdict.pending').length).toBe(1);
     await vi.waitFor(() => expect(host.mount).toHaveBeenCalled());
     const slot = q(p, '.verdict-slot')[0];
