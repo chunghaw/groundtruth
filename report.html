@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Groundtruth Report</title>
+<meta name="description" content="Groundtruth, a Chrome extension that shows independent facts about the exact home in a realestate.com.au or domain.com.au listing. Data, method, held-out check and competitor comparison.">
+<style>
+  :root {
+    --bg: #fbfaf7; --ink: #1c1b18; --muted: #5f5b52; --rule: #dcd6ca; --soft: #f1eee6;
+    --accent: #1f5f4a; --accent-soft: #e4efe9; --warn: #9a3412; --warn-soft: #fbeee4;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: -apple-system, "Segoe UI", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #171613; --ink: #ebe6db; --muted: #a49e91; --rule: #38342d; --soft: #211f1b;
+      --accent: #85c9ab; --accent-soft: #1e302a; --warn: #f2a47a; --warn-soft: #362219;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 var(--serif); }
+  main { max-width: 46rem; margin: 0 auto; padding: 2.5rem 16px 4rem; }
+  a { color: var(--accent); }
+  header { border-bottom: 2px solid var(--ink); padding-bottom: 1.2rem; margin-bottom: 2rem; }
+  .kicker { font: 600 0.75rem/1 var(--sans); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+  h1 { font-size: clamp(2rem, 1.4rem + 2.6vw, 3rem); line-height: 1.08; margin: 0.6rem 0 0.6rem; letter-spacing: -0.015em; }
+  .dek { font-size: 1.15rem; color: var(--muted); margin: 0; }
+  .links { font: 0.85rem/1.8 var(--sans); margin-top: 0.9rem; }
+  .links a { margin-right: 1rem; }
+  section { margin: 2.6rem 0; }
+  h2 { font: 700 1.45rem/1.25 var(--serif); margin: 0 0 0.8rem; }
+  h3 { font: 650 1rem/1.3 var(--sans); margin: 1.6rem 0 0.4rem; }
+  p, li { max-width: 42rem; }
+  code { font: 0.85em var(--mono); background: var(--soft); padding: 0.08em 0.3em; border-radius: 3px; }
+  .big { font: 700 1.6rem/1.2 var(--serif); color: var(--accent); display: block; margin: 0.2rem 0; }
+  .callouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.8rem; margin: 1.2rem 0; }
+  .callouts div { border-top: 3px solid var(--accent); padding-top: 0.5rem; font: 0.88rem/1.45 var(--sans); color: var(--muted); }
+  .table-wrap { overflow-x: auto; margin: 0.8rem 0 1rem; border-top: 1px solid var(--ink); }
+  table { width: 100%; border-collapse: collapse; font: 0.86rem/1.45 var(--sans); }
+  th, td { text-align: left; padding: 0.5rem 0.55rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-weight: 650; font-size: 0.75rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.us td { background: var(--accent-soft); }
+  .bar { display: inline-block; height: 0.55rem; background: var(--accent); border-radius: 2px; vertical-align: middle; margin-right: 0.4rem; }
+  .bar.low { background: var(--warn); }
+  .note { background: var(--warn-soft); border-left: 4px solid var(--warn); padding: 0.8rem 1rem; margin: 1rem 0; font-size: 0.97rem; }
+  figure { margin: 1.2rem 0; }
+  figcaption { font: italic 0.85rem/1.5 var(--serif); color: var(--muted); margin-top: 0.4rem; }
+  .diagram { width: 100%; height: auto; display: block; }
+  .diagram rect { fill: var(--bg); stroke: var(--ink); stroke-width: 1.2; }
+  .diagram rect.state { fill: var(--soft); stroke: var(--rule); }
+  .diagram rect.exact { fill: var(--accent-soft); stroke: var(--accent); }
+  .diagram text { fill: var(--ink); font: 12px var(--sans); }
+  .diagram text.t { font-weight: 650; }
+  .diagram text.s { fill: var(--muted); font-size: 10.5px; }
+  .diagram path, .diagram line { stroke: var(--muted); stroke-width: 1.2; fill: none; }
+  .shot { display: grid; grid-template-columns: 15rem 1fr; gap: 1.4rem; align-items: start; }
+  .shot img { width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 6px; }
+  @media (max-width: 640px) { .shot { grid-template-columns: 1fr; } .shot img { max-width: 16rem; } }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--rule); font: 0.8rem/1.6 var(--sans); color: var(--muted); }
+  footer li { margin: 0.2rem 0; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="kicker">Microburbs hackathon · Task 3 · Sydney · 7 November 2026</div>
+    <h1>Can a browser extension show facts for the right home, every time?</h1>
+    <p class="dek">Groundtruth is a Chrome extension for realestate.com.au and domain.com.au. It reads only the listing's address, matches it to one home in G-NAF, and shows independent facts beside the listing. If it isn't sure which home it is, it shows nothing.</p>
+    <p class="links"><a href="https://groundtruth-tawny-one.vercel.app/demo">Live demo</a><a href="https://github.com/chunghaw/groundtruth">Repo</a></p>
+  </header>
+
+  <section aria-labelledby="h-found">
+    <h2 id="h-found">What we found</h2>
+    <div class="callouts">
+      <div><span class="big">0 of 30</span>real listings matched to the wrong home in our held-out check</div>
+      <div><span class="big">15 of 20</span>listings with a findable unit or house matched exactly</div>
+      <div><span class="big">0 of 45</span>homes had agency quoting data, so we moved it to the bottom</div>
+    </div>
+    <p>The hardest part was not the data. It was making sure the data belonged to the home on screen. Both portals keep the previous listing's data in the page after you click to the next one, so an extension that trusts it shows the wrong home. And many listing addresses (<code>C603/276</code>, <code>303N/16-20</code>, <code>188A</code>, a hidden unit) don't line up neatly with G-NAF.</p>
+  </section>
+
+  <section aria-labelledby="h-built">
+    <h2 id="h-built">What does the buyer see?</h2>
+    <div class="shot">
+      <figure>
+        <img src="docs/img/panel-building-mock.jpg" width="380" height="1490" loading="lazy" alt="The Groundtruth panel in the BUILDING state: a match receipt with unit unchecked, a list of four units with a bedroom filter, and a 3D map of what can rise next door.">
+        <figcaption>The panel on our demo listing site, with mock data. The listing names the building but not the unit, so the panel asks which unit instead of guessing.</figcaption>
+      </figure>
+      <div>
+        <p>A slim panel on the right of the listing. From the top:</p>
+        <ol>
+          <li><strong>Verified home receipt.</strong> What we read, how we normalised it, which of the four checks passed (unit, number, street, suburb) and the G-NAF id.</li>
+          <li><strong>What can legally rise next door.</strong> A 3D map of today's buildings, with glass volumes on lots where planning controls allow 2 or more extra storeys.</li>
+          <li><strong>Value.</strong> The Microburbs estimate with its 80% range and confidence. The buyer can type the guide they were given, and the panel says whether it looks believable, low or above the range. We never read the guide from the page.</li>
+          <li><strong>Street vs suburb</strong>, <strong>sale history</strong>, <strong>risk overlays</strong>, <strong>strata levy</strong>.</li>
+          <li><strong>A 30-second spoken briefing</strong> of the above, with captions.</li>
+        </ol>
+        <p>Outside the 29 City of Sydney suburbs, the panel says so and makes no data call.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-data">
+    <h2 id="h-data">What data supported it?</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Source</th><th>What we use it for</th></tr></thead>
+      <tbody>
+        <tr><td>Microburbs API</td><td>Unit-level G-NAF geocode; the key's 29 suburbs (<code>/v1/me</code>); valuation; sale history; street profile; risks; strata levies; agency quoting; building controls (height and FSR); surrounding lots; noise; busy roads</td></tr>
+        <tr><td>Organiser file <code>flats-city-of-sydney.csv</code></td><td>Cross-check of every match. 149,880 residential rows indexed (shops, suites, car spaces dropped). Units and bedrooms per building.</td></tr>
+        <tr><td>OpenStreetMap via OpenFreeMap tiles</td><td>Today's building footprints and heights for the 3D view</td></tr>
+        <tr><td>The listing page</td><td>The displayed address only</td></tr>
+      </tbody>
+    </table></div>
+    <h3>How often was each fact there?</h3>
+    <p>We looked up 45 real homes across the 29 suburbs and counted how often each fact came back with usable data.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Fact</th><th>Available</th></tr></thead>
+      <tbody>
+        <tr><td>Risk overlays</td><td class="num"><span class="bar" style="width:6rem"></span>100%</td></tr>
+        <tr><td>Strata levy (suburb level)</td><td class="num"><span class="bar" style="width:6rem"></span>100%</td></tr>
+        <tr><td>Building controls (for the 3D view)</td><td class="num"><span class="bar" style="width:6rem"></span>100%</td></tr>
+        <tr><td>Street profile</td><td class="num"><span class="bar" style="width:5.4rem"></span>about 90%</td></tr>
+        <tr><td>Sale history with a price</td><td class="num"><span class="bar low" style="width:1.2rem"></span>about 20%</td></tr>
+        <tr><td>Valuation (AVM)</td><td class="num"><span class="bar low" style="width:0.8rem"></span>about 13%</td></tr>
+        <tr><td>Agency quoting accuracy</td><td class="num"><span class="bar low" style="width:0.15rem"></span>0 of 45</td></tr>
+      </tbody>
+    </table></div>
+    <p>So the panel orders facts by how often they exist and collapses the missing ones. We had planned agency quoting as the headline fact. With no data on any of the 45 homes, we demoted it.</p>
+  </section>
+
+  <section aria-labelledby="h-method">
+    <h2 id="h-method">How did we match a listing to one home?</h2>
+    <figure>
+      <svg class="diagram" viewBox="0 0 720 300" role="img" aria-labelledby="dg-title dg-desc">
+        <title id="dg-title">Matching pipeline</title>
+        <desc id="dg-desc">The listing address is read, normalised, checked against the 29 suburbs, geocoded through Microburbs to G-NAF, cross-checked against the organiser address file, and ends in one of five states.</desc>
+        <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--muted);stroke:none"/></marker></defs>
+        <rect x="10" y="20" width="120" height="66" rx="4"/>
+        <text class="t" x="20" y="42">Read address</text>
+        <text class="s" x="20" y="60">heading or page data</text>
+        <text class="s" x="20" y="74">only if URL matches</text>
+        <rect x="155" y="20" width="110" height="66" rx="4"/>
+        <text class="t" x="165" y="42">Normalise</text>
+        <text class="s" x="165" y="60">unit, no., street,</text>
+        <text class="s" x="165" y="74">suburb, postcode</text>
+        <rect x="290" y="20" width="120" height="66" rx="4"/>
+        <text class="t" x="300" y="42">In the 29</text>
+        <text class="t" x="300" y="57">suburbs?</text>
+        <text class="s" x="300" y="74">no API call if not</text>
+        <rect x="435" y="20" width="125" height="66" rx="4"/>
+        <text class="t" x="445" y="42">Microburbs</text>
+        <text class="t" x="445" y="57">geocode</text>
+        <text class="s" x="445" y="74">unit-level G-NAF</text>
+        <rect x="585" y="20" width="125" height="66" rx="4"/>
+        <text class="t" x="595" y="42">Cross-check</text>
+        <text class="s" x="595" y="60">organiser address file</text>
+        <text class="s" x="595" y="74">by id or by unit</text>
+        <line x1="130" y1="53" x2="153" y2="53" marker-end="url(#arr)"/>
+        <line x1="265" y1="53" x2="288" y2="53" marker-end="url(#arr)"/>
+        <line x1="410" y1="53" x2="433" y2="53" marker-end="url(#arr)"/>
+        <line x1="560" y1="53" x2="583" y2="53" marker-end="url(#arr)"/>
+        <path d="M350 86 V250 H360" marker-end="url(#arr)"/>
+        <path d="M647 86 V120 H70 V150" marker-end="url(#arr)"/>
+        <path d="M647 120 V150" marker-end="url(#arr)"/>
+        <path d="M222 120 V150" marker-end="url(#arr)"/>
+        <path d="M435 120 V150" marker-end="url(#arr)"/>
+        <rect class="state exact" x="10" y="152" width="170" height="74" rx="4"/>
+        <text class="t" x="20" y="172">EXACT</text>
+        <text class="s" x="20" y="189">all four checks agree, and the</text>
+        <text class="s" x="20" y="203">file confirms it, or G-NAF says</text>
+        <text class="s" x="20" y="217">'house' and there is no unit</text>
+        <rect class="state" x="195" y="152" width="140" height="74" rx="4"/>
+        <text class="t" x="205" y="172">BUILDING</text>
+        <text class="s" x="205" y="189">building found, unit not;</text>
+        <text class="s" x="205" y="203">list units, narrow by</text>
+        <text class="s" x="205" y="217">bedrooms</text>
+        <rect class="state" x="370" y="152" width="130" height="74" rx="4"/>
+        <text class="t" x="380" y="172">CHOOSE</text>
+        <text class="s" x="380" y="189">more than one home</text>
+        <text class="s" x="380" y="203">fits; buyer picks</text>
+        <rect class="state" x="575" y="152" width="135" height="74" rx="4"/>
+        <text class="t" x="585" y="172">NO_MATCH</text>
+        <text class="s" x="585" y="189">anything else;</text>
+        <text class="s" x="585" y="203">we show nothing</text>
+        <rect class="state" x="362" y="236" width="150" height="40" rx="4"/>
+        <text class="t" x="372" y="261">OUT_OF_AREA</text>
+      </svg>
+      <figcaption>Every reply carries a receipt of what was read and which checks passed.</figcaption>
+    </figure>
+
+    <h3>Step 1: read the right address</h3>
+    <p>We read only the address. On realestate.com.au we use the page heading, and the JSON-LD only on a fresh page load and only when it agrees with the heading. On domain.com.au we use the page data (<code>__NEXT_DATA__</code>) only when its <code>listingId</code> matches the id in the URL; otherwise the heading.</p>
+    <p>The reason: after you click from one listing to the next, both sites still hold the previous listing's data in the page for a while. We saw this live on both sites. An extension that reads it shows facts for the wrong home. We re-read on every navigation, wait until the heading matches the new URL, and drop any reply for a listing the buyer has left.</p>
+
+    <h3>Step 2: resolve it to one G-NAF home</h3>
+    <p>We split the address into unit, number, street, suburb and postcode. This handles ranges (<code>417-419</code>), letter units (<code>C603</code>), <code>Level 8/1</code> (a floor, not a unit), multiple units (<code>330&amp;330A</code>), named units (<code>Penthouse</code>) and missing street types. Area is the 29 suburbs returned by <code>/v1/me</code>, which the API names with a suffix such as <code>Waterloo (NSW)</code>. We then geocode through Microburbs, which returns unit-level G-NAF records, and score each one on the four parts separately.</p>
+    <p>The key rule: <strong>EXACT needs a confirming record in the organiser address file, or a G-NAF record typed 'house' when the listing has no unit.</strong> Without that, a lone base record for a tower can look like a match when the unit is really unknown.</p>
+  </section>
+
+  <section aria-labelledby="h-compare">
+    <h2 id="h-compare">What do buyers already see?</h2>
+    <p>We checked both portals and the Chrome Web Store on 7 November 2026.</p>
+    <h3>The property sites</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Fact</th><th>realestate.com.au</th><th>domain.com.au</th><th>Groundtruth</th></tr></thead>
+      <tbody>
+        <tr><td>Price guide</td><td>Sometimes; often hidden</td><td>Yes</td><td>Checks the guide the buyer types</td></tr>
+        <tr><td>Estimate for this home</td><td>No</td><td>Domain estimate</td><td>Microburbs estimate, 80% range, confidence</td></tr>
+        <tr><td>Last sold</td><td>No</td><td>"Domain Says" last sold</td><td>Sale history of this home</td></tr>
+        <tr><td>Suburb context</td><td>Suburb insights</td><td>Suburb profile</td><td>This street against its suburb</td></tr>
+        <tr><td>Schools, NBN</td><td>Schools, NBN</td><td>School catchments</td><td>Not repeated</td></tr>
+        <tr><td>Strata levy</td><td>No</td><td>Paid strata report</td><td>Suburb levy levels</td></tr>
+        <tr><td>Risk overlays</td><td>No</td><td>No</td><td>Yes</td></tr>
+        <tr><td>What can be built next door</td><td>No</td><td>No</td><td>3D headroom view</td></tr>
+        <tr><td>Proof which home the data is for</td><td>n/a</td><td>n/a</td><td>Match receipt with G-NAF id</td></tr>
+      </tbody>
+    </table></div>
+    <h3>Existing extensions</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Extension</th><th>Users</th><th>What it adds</th><th>Limits</th></tr></thead>
+      <tbody>
+        <tr><td>Homer (formerly KoalaData)</td><td class="num">~10k</td><td>Guide against the agent's past sales; campaign history</td><td>Login wall</td></tr>
+        <tr><td>Property Seeker</td><td class="num">~10k</td><td>Hidden prices; Walk Score</td><td>Nothing about the specific home</td></tr>
+        <tr><td>Property Mate</td><td class="num">~4k</td><td>Price guide; flood and bushfire; AI pros and cons</td><td>REA only</td></tr>
+        <tr><td>PriceDaddy! / Real Estate Mate</td><td class="num">1–3k</td><td>Price guide estimates</td><td>REA only; not kept up to date</td></tr>
+        <tr class="us"><td><strong>Groundtruth</strong></td><td class="num">new</td><td>Verified G-NAF match with receipt; planning headroom in 3D; value against the buyer's guide; street vs suburb; sale history; risks; strata; spoken briefing</td><td>City of Sydney only (the hackathon area)</td></tr>
+      </tbody>
+    </table></div>
+    <p>None of the four matches the listing to a G-NAF home, shows which home its data is for, or shows planning headroom.</p>
+  </section>
+
+  <section aria-labelledby="h-why">
+    <h2 id="h-why">Why these facts for a browsing buyer?</h2>
+    <p>A buyer scrolling listings has a few seconds per home. We picked facts that the portals don't show, that change the decision, and that we could get for most homes.</p>
+    <ul>
+      <li><strong>Which home is this?</strong> Every other fact depends on it, so it comes first, as a receipt the buyer can check.</li>
+      <li><strong>What can rise next door.</strong> Views, light and quiet can change with one development application. The controls are public, but buyers rarely look them up. Building controls were available for every home we tried.</li>
+      <li><strong>Value against the guide.</strong> The most common question. The buyer types the guide they were given, so we never depend on a hidden or vague guide, and the guide never leaves the page.</li>
+      <li><strong>Street vs suburb.</strong> Suburb medians hide big street differences. Available for about 90% of homes.</li>
+      <li><strong>Risks and strata levy.</strong> Costs that tend to show up after an offer. Available for every home.</li>
+      <li><strong>Sale history.</strong> Shown when it exists (about 20%).</li>
+    </ul>
+    <p><strong>What we left out on purpose:</strong> public-housing fields. They are estimates of where social tenants live, they stigmatise neighbours, and we can't verify them. The proxy strips them before anything reaches the panel. We also don't repeat schools or the guide, which the portals already show.</p>
+  </section>
+
+  <section aria-labelledby="h-check">
+    <h2 id="h-check">How did we check it?</h2>
+    <p>At 10:27, before any resolver tuning, we collected 30 real for-sale listings (15 realestate.com.au, 15 domain.com.au), recorded only each URL and displayed address, labelled the expected state by hand, and froze the file with a hash. Labels: 20 EXACT, 5 BUILDING, 4 OUT_OF_AREA, 1 NO_MATCH. The set covers slash units, letter units, <code>Level n</code>, number ranges, number suffixes, multi-unit and named units, partial addresses, a locality alias and a missing street type. The headline measure is the false-match rate: facts shown for a home that isn't the listing.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Measure</th><th>Before late fixes</th><th>Final</th></tr></thead>
+      <tbody>
+        <tr><td><strong>False matches</strong> (target 0)</td><td class="num">1 / 30</td><td class="num"><strong>0 / 30</strong></td></tr>
+        <tr><td>Exact homes found (labelled EXACT)</td><td class="num">17 / 20</td><td class="num">15 / 20 (75%)</td></tr>
+        <tr><td>Precision of EXACT answers</td><td class="num">17 / 18</td><td class="num">15 / 15 (100%)</td></tr>
+        <tr><td>Building found (labelled BUILDING)</td><td class="num">4 / 5</td><td class="num">4 / 5</td></tr>
+        <tr><td>Out-of-area correct</td><td class="num">4 / 4</td><td class="num">4 / 4</td></tr>
+        <tr><td>Agreement with label: realestate.com.au</td><td class="num"></td><td class="num">13 / 15</td></tr>
+        <tr><td>Agreement with label: domain.com.au</td><td class="num"></td><td class="num">11 / 15</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note"><strong>This is not a fully blind result.</strong> The one false match before the late fixes was an off-the-plan listing with the unit withheld; it matched the lone base G-NAF record. The rule that fixed it (EXACT needs confirmation from the address file) and its refinement (allow G-NAF 'house' records with no unit) were both chosen while looking at that held-out row. Each is a general rule with a unit test and none names an address, but the held-out set influenced them.</div>
+    <h3>What it still misses, and why</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Listing pattern</th><th>Expected</th><th>Got</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Units <code>A10</code>, <code>C603</code>, <code>303N</code></td><td>EXACT</td><td>BUILDING</td><td>These unit numbers are not in G-NAF or the address file. The building is right; the buyer picks the unit. No resolver could return the right id.</td></tr>
+        <tr><td><code>188A</code> Rochford St, <code>278C</code> Bulwara Rd</td><td>EXACT</td><td>NO_MATCH</td><td>G-NAF types them 'unit' with no unit number, and the flats file has no record. We won't pin an ambiguous record.</td></tr>
+        <tr><td>905 South Dowling St (off the plan)</td><td>BUILDING</td><td>NO_MATCH</td><td>No record in the address file, and nothing else at the number to offer as a building. Safe, but not helpful.</td></tr>
+      </tbody>
+    </table></div>
+    <p>All six misses fail safe: none shows facts for the wrong home.</p>
+  </section>
+
+  <section aria-labelledby="h-worked">
+    <h2 id="h-worked">What worked</h2>
+    <ul>
+      <li><strong>Checking four parts separately.</strong> Unit, number, street and suburb each pass or fail, so every miss is explainable on the receipt.</li>
+      <li><strong>Cross-checking against the address file.</strong> It removed the one false match and gave us bedroom counts to narrow hidden units.</li>
+      <li><strong>Freezing the held-out set early</strong>, and writing down every later change and what it cost (exact rate 17/20 → 15/20 to get false matches to 0).</li>
+      <li><strong>Ordering facts by availability.</strong> The panel opens on facts that exist instead of a stack of "not available".</li>
+      <li><strong>Mock mode.</strong> We built and tested the whole panel before the API key arrived.</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="h-didnt">
+    <h2 id="h-didnt">What did not work, and what remains uncertain</h2>
+    <ul>
+      <li><strong>Agency quoting</strong> was our planned headline. It was available for 0 of 45 homes.</li>
+      <li><strong>Valuation coverage is low</strong> (about 13%), so the value card is often missing.</li>
+      <li><strong>Height controls can sit below existing towers.</strong> One unit at 417-419 Bourke St is in a 3 m height zone under a tower of about 63 m. We now flag that the building predates today's control instead of promising "up to 3 m".</li>
+      <li><strong>OpenStreetMap heights are estimates</strong>, and some are missing. Where a height control is missing we estimate it from FSR and say so.</li>
+      <li><strong>Some units are not in G-NAF</strong> (<code>A10</code>, <code>C603</code>, <code>303N</code>), so the best we can do is the building.</li>
+      <li><strong>The two sites behave differently.</strong> Moving between listings is an in-page change on realestate.com.au but a full reload on domain.com.au, so we handle both paths.</li>
+      <li><strong>The address file is a flats file.</strong> It can't confirm freestanding houses, which is why we rely on G-NAF's 'house' type there. It also doesn't filter by building type, so an industrial-zoned building with two flats still counts as confirmed.</li>
+      <li><strong>30 listings is a small check.</strong> 0 of 30 doesn't prove the false-match rate is zero.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <strong>Sources and credits</strong>
+    <ul>
+      <li>Microburbs API, used under the hackathon terms. Microburbs 2026 block figures are estimates.</li>
+      <li>Open G-NAF © Geoscape Australia, licensed by the Commonwealth of Australia under the Open G-NAF End User Licence Agreement. Attribution required; not to be used for mailing.</li>
+      <li>Organiser address file (<code>flats-city-of-sydney.csv</code>), used on the day only; not republished or committed.</li>
+      <li>© OpenStreetMap contributors (ODbL), OpenMapTiles, OpenFreeMap. MapLibre GL JS (BSD-3-Clause).</li>
+      <li>ElevenLabs text-to-speech, with the browser's speech as fallback.</li>
+      <li>Request pacing and unit-rewrite ideas adapted from the Microburbs hackathon demos (MIT), github.com/Microburbs/microburbs-hackathon-demos.</li>
+    </ul>
+    The screenshot is from our own demo site with mock data. All figures in this report are counts we computed ourselves; no API output or listing content is included. realestate.com.au and domain.com.au are trademarks of their owners; Groundtruth is not affiliated with them.
+  </footer>
+</main>
+</body>
+</html>
