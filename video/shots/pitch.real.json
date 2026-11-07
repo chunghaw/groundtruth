@@ -1,39 +1,40 @@
 {
   "beats": {
     "p1-hook": {
-      "file": "out/real/s1.mp4",
-      "ss": 13,
+      "file": "out/real/r1.mp4",
+      "ss": 3,
       "len": 0,
-      "crop": "1440:810:480:250"
+      "crop": "1920:910:0:170"
     },
     "p2-receipt": {
-      "file": "out/real/s1.mp4",
-      "ss": 25.5,
+      "file": "out/real/r1.mp4",
+      "ss": 10,
       "len": 0,
-      "crop": "1440:810:480:250"
+      "crop": "1920:910:0:170"
     },
     "p3-price": {
-      "file": "out/real/s1.mp4",
-      "ss": 37,
+      "file": "out/real/r1.mp4",
+      "ss": 25,
       "len": 0,
-      "crop": "1440:810:480:250"
+      "crop": "1920:910:0:170"
     },
     "p4-features": {
-      "file": "out/real/feat.mp4",
-      "ss": 19,
+      "file": "out/real/r2.mp4",
+      "ss": 8,
       "len": 0,
-      "crop": "1440:810:480:250"
+      "crop": "1920:910:0:170"
     },
     "p5-3d": {
-      "file": "out/real/layers-push.mp4",
-      "ss": 0,
-      "len": 0
+      "file": "out/real/r4_3d.mp4",
+      "ss": 1,
+      "len": 0,
+      "crop": "1920:966:0:114"
     },
     "p6-briefing": {
-      "file": "out/real/s7.mp4",
-      "ss": 203,
+      "file": "out/real/r1.mp4",
+      "ss": 81,
       "len": 0,
-      "crop": "1440:810:480:250"
+      "crop": "1920:910:0:170"
     }
   }
 }

@@ -3,56 +3,56 @@
   "title": "Groundtruth: 45-second pitch",
   "maxTotalSec": 45,
   "titleSec": 0,
-  "endSec": 1.0,
+  "endSec": 0.5,
   "tailPadSec": 0.15,
   "beats": [
     {
       "id": "p1-hook",
       "window": "",
-      "maxSec": 30,
+      "maxSec": 40,
       "vo": "House hunting in Sydney? Every listing tells you the seller's story. Groundtruth tells you the home's, right beside the listing.",
       "caption": "Groundtruth · right beside the listing",
-      "action": "s1 price check"
+      "action": "r1 3–10"
     },
     {
       "id": "p2-receipt",
       "window": "",
-      "maxSec": 30,
+      "maxSec": 40,
       "vo": "It reads just the address and pins the exact apartment, so every fact belongs to this home.",
       "caption": "[[Exact home]] from the address alone",
-      "action": "s1 receipt"
+      "action": "r1 receipt"
     },
     {
       "id": "p3-price",
       "window": "",
-      "maxSec": 30,
-      "vo": "First, price. This agency usually sells about four percent over guide, so expect around eight hundred and thirty thousand, not eight hundred.",
+      "maxSec": 40,
+      "vo": "First, price. This agency usually sells about four percent over guide, so expect around eight hundred and thirty thousand.",
       "caption": "Agency ~4% over guide · expect [[~$830k]]",
-      "action": "s1 agency + price"
+      "action": "r1 agency"
     },
     {
       "id": "p4-features",
       "window": "",
-      "maxSec": 30,
+      "maxSec": 40,
       "vo": "Then what the listing leaves out: heritage on the property, a high-voltage line thirty-five metres away, and how the street grows against the suburb.",
       "caption": "[[Heritage on property]] · HV line 35 m · street vs suburb",
-      "action": "feat 19–27"
+      "action": "r2"
     },
     {
       "id": "p5-3d",
       "window": "",
-      "maxSec": 30,
+      "maxSec": 40,
       "vo": "And in 3D, what's allowed to rise next door.",
       "caption": "What can [[legally rise next door]]",
-      "action": "layers 3D push-in"
+      "action": "r4_3d"
     },
     {
       "id": "p6-briefing",
       "window": "",
-      "maxSec": 30,
+      "maxSec": 40,
       "vo": "Tap play for a thirty-second spoken briefing on the way to the inspection. Groundtruth, built on the Microburbs API.",
-      "caption": "▶ 30-sec briefing · tap to listen",
-      "action": "s7 briefing (no briefing audio)"
+      "caption": "▶ Listen · 30s",
+      "action": "r1 81–90"
     }
   ]
 }

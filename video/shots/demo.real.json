@@ -1,91 +1,70 @@
 {
   "beats": {
     "d01-intro": {
-      "file": "out/real/s1.mp4",
+      "file": "out/real/r1.mp4",
       "ss": 3,
       "len": 0,
-      "crop": "1600:900:320:172"
+      "crop": "1920:910:0:170"
     },
     "d02-price": {
-      "file": "out/real/s1.mp4",
-      "ss": 13,
+      "file": "out/real/r1.mp4",
+      "ss": 8,
       "len": 0,
-      "crop": "1440:810:480:250"
+      "crop": "1920:910:0:170"
     },
     "d03-receipt": {
-      "file": "out/real/s1.mp4",
-      "ss": 25.5,
+      "file": "out/real/r1.mp4",
+      "ss": 16,
       "len": 0,
-      "crop": "1440:810:480:250"
+      "crop": "1920:910:0:170"
     },
     "d04-agency": {
-      "file": "out/real/s1.mp4",
-      "ss": 36.5,
+      "file": "out/real/r1.mp4",
+      "ss": 25,
       "len": 0,
-      "crop": "1440:810:480:250"
-    },
-    "d05-guide": {
-      "file": "out/real/s1.mp4",
-      "ss": 86,
-      "len": 0,
-      "crop": "1440:810:480:250"
+      "crop": "1920:910:0:170"
     },
     "d06-switch": {
-      "file": "out/real/s6.mp4",
-      "ss": 19,
-      "len": 17,
-      "crop": "1600:900:320:172"
-    },
-    "d07-features": {
-      "file": "out/real/feat.mp4",
-      "ss": 19,
+      "file": "out/real/r3.mp4",
+      "ss": 16,
       "len": 0,
-      "crop": "1440:810:480:250"
-    },
-    "d08-strata": {
-      "file": "out/real/feat.mp4",
-      "ss": 27,
-      "len": 0,
-      "crop": "1440:810:480:250"
+      "crop": "1920:910:0:170"
     },
     "d09-3d": {
-      "file": "out/real/s3d-demo.mp4",
+      "file": "out/real/r4_3d.mp4",
       "ss": 0,
-      "len": 0
-    },
-    "d10-domain": {
-      "file": "out/real/s7.mp4",
-      "ss": 5,
       "len": 0,
-      "crop": "1600:900:320:172"
+      "crop": "1920:966:0:114"
+    },
+    "d07-features": {
+      "file": "out/real/r2.mp4",
+      "ss": 8,
+      "len": 0,
+      "crop": "1920:910:0:170"
+    },
+    "d08-strata": {
+      "file": "out/real/r2.mp4",
+      "ss": 18.5,
+      "len": 0,
+      "crop": "1920:910:0:170"
     },
     "d11-brief-intro": {
-      "file": "out/real/s7.mp4",
-      "ss": 192,
+      "file": "out/real/r1.mp4",
+      "ss": 79,
       "len": 0,
-      "crop": "800:450:1120:200"
+      "crop": "1920:910:0:170"
     },
     "d12-briefing": {
-      "file": "out/real/s7.mp4",
-      "ss": 203,
+      "file": "out/real/r1.mp4",
+      "ss": 86,
       "len": 0,
-      "crop": "1440:810:480:250"
-    },
-    "d13-hidden-unit": {
-      "file": "out/demo/clips/d06-hidden-unit/frames.ffconcat",
-      "ss": 0,
-      "len": 0
-    },
-    "d14-out-of-area": {
-      "file": "out/demo/clips/d07-out-of-area/frames.ffconcat",
-      "ss": 0,
-      "len": 0
+      "crop": "1920:910:0:170"
     },
     "d15-end": {
-      "file": "out/real/s6.mp4",
-      "ss": 34,
+      "file": "out/real/r4_3d.mp4",
+      "ss": 8,
       "len": 0,
-      "crop": "1600:900:320:172"
+      "crop": "1920:966:0:114"
     }
   }
 }
