@@ -50,6 +50,12 @@
       ],
       "show": [
         {
+          "do": "clickPanel",
+          "selector": "section.receipt:not(.open) .strip",
+          "optional": true,
+          "timeout": 400
+        },
+        {
           "do": "hoverPanel",
           "selector": "section.receipt dl dd:nth-of-type(1)"
         },
@@ -163,6 +169,12 @@
           "do": "scrollPanelTo",
           "selector": "section.receipt",
           "block": "center"
+        },
+        {
+          "do": "clickPanel",
+          "selector": "section.receipt:not(.open) .strip",
+          "optional": true,
+          "timeout": 400
         },
         {
           "do": "hoverPanel",

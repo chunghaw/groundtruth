@@ -47,3 +47,14 @@ CHOOSE (blue) → candidate list; picking one fetches its facts. NO MATCH (red),
   sentence with `chrome.tts` (web demo: `window.speechSynthesis`).
 - **Why `tts`:** `chrome.tts` runs in the service worker, so the fallback voice works on any listing page regardless of
   the page's own media/CSP rules and autoplay state. It grants no access to page data.
+
+## 3D card ("What can rise next door")
+- Real buildings: OpenFreeMap positron vector tiles (`openmaptiles` / `building`, `render_height`) as warm-stone
+  extrusions; the home's OSM footprint in blue with a pulse ring and a "Your home" pin.
+- Headroom ghosts (`src/context3d/headroom.ts`, pure + tested): lot footprint from today's tallest building on it up
+  to the permitted max height (Microburbs HOB, or FSR estimate), only where the gap is >= 2 storeys (3.2 m/storey).
+  No OSM heights at all -> full permitted envelopes from the ground, permitted-height caption.
+- Map runs in `map3d.html` (extension page iframe); `tiles.openfreemap.org` is in `host_permissions`.
+- Premium path (stub, not built): Google Photorealistic 3D Tiles via deck.gl `Tile3DLayer`, enabled only when a
+  browser-restricted `GOOGLE_MAPS_TILES_KEY` is defined at build time. Would replace the OSM extrusion layer;
+  ghosts would need deck.gl `SolidPolygonLayer` instead of MapLibre fill-extrusion.

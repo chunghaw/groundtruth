@@ -1,5 +1,5 @@
 /** Content-script host: data via the background worker, map inside an extension-page iframe. */
-import type { Context3D, Context3DHost, MapController, Overlay } from './types';
+import type { Context3D, Context3DHost, HeadroomInsight, MapController, Overlay } from './types';
 import { isContext3D } from './types';
 
 const reducedMotion = (): boolean => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
@@ -15,7 +15,7 @@ export const extensionContext3DHost: Context3DHost = {
     const target = new URL(src).origin;
     const frame = document.createElement('iframe');
     frame.src = src;
-    frame.title = '3D view of permitted building heights';
+    frame.title = '3D model: your home and what could legally rise next door';
     frame.setAttribute('style', 'border:0;width:100%;height:100%;display:block');
     const overlays: Partial<Record<Overlay, boolean>> = {};
     return new Promise((resolve, reject) => {
@@ -28,11 +28,16 @@ export const extensionContext3DHost: Context3DHost = {
           frame.contentWindow?.postMessage({ type: 'gt3d:data', data, reducedMotion: reducedMotion() }, target);
           for (const [layer, on] of Object.entries(overlays)) frame.contentWindow?.postMessage({ type: 'gt3d:overlay', layer, on }, target);
         }
-        if (t === 'gt3d:rendered' && !settled) { settled = true; resolve(ctl); }
+        if (t === 'gt3d:rendered' && !settled) {
+          settled = true;
+          const insight = (e.data as { insight?: HeadroomInsight | null }).insight ?? null;
+          resolve({ ...ctl, insight });
+        }
         if (t === 'gt3d:error' && !settled) { settled = true; reject(new Error((e.data as { message?: string }).message ?? 'Map failed')); }
       };
       const ctl: MapController = {
         setOverlay(layer, on) { overlays[layer] = on; frame.contentWindow?.postMessage({ type: 'gt3d:overlay', layer, on }, target); },
+        resetView() { frame.contentWindow?.postMessage({ type: 'gt3d:reset' }, target); },
         destroy() { window.removeEventListener('message', onMsg); frame.remove(); },
       };
       window.addEventListener('message', onMsg);

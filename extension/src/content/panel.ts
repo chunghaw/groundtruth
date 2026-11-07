@@ -6,6 +6,7 @@ import { PANEL_CSS } from './styles';
 import { BriefingControl, BRIEFING_CSS, type BriefingDeps } from './briefing';
 import { OFFER_CSS } from './offerCard';
 import { context3dCard, CONTEXT3D_CSS } from '../context3d/card';
+import { factsVerdict, verdictEl, type Verdict } from './verdict';
 import type { Context3DHost } from '../context3d/types';
 
 export type PanelView =
@@ -34,17 +35,26 @@ export interface PanelOptions {
   readonly context3d?: Context3DHost;
 }
 
-const STATE_LABEL: Record<MatchState | 'LOADING' | 'ERROR', string> = {
+type PanelState = MatchState | 'LOADING' | 'ERROR';
+
+const STATE_LABEL: Record<PanelState, string> = {
   EXACT: 'Exact', BUILDING: 'Building', CHOOSE: 'Choose', NO_MATCH: 'No match', OUT_OF_AREA: 'Out of area', LOADING: 'Reading', ERROR: 'Offline',
 };
-const DOT: Record<string, string> = { EXACT: '#1f7a4d', BUILDING: '#a96500', CHOOSE: '#2c79b5', NO_MATCH: '#b4232c', OUT_OF_AREA: '#8a93a2', LOADING: '#8a93a2', ERROR: '#b4232c' };
+const DOT: Record<PanelState, string> = { EXACT: '#157347', BUILDING: '#a85a00', CHOOSE: '#1b4fd8', NO_MATCH: '#b42318', OUT_OF_AREA: '#8a93a2', LOADING: '#8a93a2', ERROR: '#b42318' };
+const STRIP_TITLE: Record<PanelState, string> = {
+  EXACT: 'Verified home', BUILDING: 'Building verified', CHOOSE: 'Several homes match', NO_MATCH: 'Not verified', OUT_OF_AREA: 'Outside coverage', LOADING: 'Reading the address…', ERROR: 'Not checked yet',
+};
+const SEAL: Record<PanelState, string> = { EXACT: '✓', BUILDING: '?', CHOOSE: '?', NO_MATCH: '!', OUT_OF_AREA: '–', LOADING: '', ERROR: '!' };
 const FROM_LABEL: Record<string, string> = { h1: 'page heading', 'h1+json-ld': 'heading ✓ structured data', __NEXT_DATA__: 'page data (id-matched)', manual: 'typed by you' };
+const COVERAGE = ['Sydney', 'Surry Hills', 'Darlinghurst', 'Glebe', 'Pyrmont', 'Ultimo', 'Redfern', 'Newtown', 'Potts Point', 'Zetland', '+19 more'];
 
 export class Panel {
   private readonly host: HTMLElement;
   private readonly root: ShadowRoot;
   private readonly wrap: HTMLElement;
   private collapsed = false;
+  /** null = follow the default for the state (closed for EXACT, open otherwise). */
+  private receiptOpen: boolean | null = null;
   private view: PanelView | null = null;
   private guide = { value: '' };
   private readonly briefing: BriefingControl | null;
@@ -59,7 +69,11 @@ export class Panel {
     this.root.append(h('style', {}, CONTEXT3D_CSS));
     this.wrap = h('div', { class: 'gt' });
     this.root.append(this.wrap);
-    try { this.collapsed = sessionStorage.getItem('gt:collapsed') === '1'; } catch { /* storage blocked */ }
+    try {
+      this.collapsed = sessionStorage.getItem('gt:collapsed') === '1';
+      const r = sessionStorage.getItem('gt:receipt');
+      this.receiptOpen = r === null ? null : r === '1';
+    } catch { /* storage blocked */ }
     this.mount();
   }
 
@@ -79,14 +93,16 @@ export class Panel {
     this.wrap.className = `gt${this.opts.container ? ' embedded' : ''}${this.collapsed ? ' collapsed' : ''}`;
     const tab = h('button', { class: 'tab', 'aria-expanded': String(!this.collapsed), 'aria-label': `Groundtruth: ${STATE_LABEL[state]}. ${this.collapsed ? 'Expand' : 'Collapse'} panel`, onClick: () => this.toggle() },
       h('span', { class: 'dot', style: `background:${DOT[state]}` }), 'Groundtruth');
+    const body = [this.briefing && this.briefingGnaf(view) ? this.briefing.captions() : null, ...this.bodyFor(view)].filter((x): x is HTMLElement => !!x);
+    body.forEach((el, i) => { if (el.classList.contains('brief-cap')) return; el.classList.add('rise'); el.style.setProperty('--i', String(Math.min(i, 10))); });
     const sheet = h('aside', { class: 'sheet', 'aria-label': 'Groundtruth property facts' },
       h('header', { class: 'top' },
-        h('div', { class: 'brand' }, 'Groundtruth', h('small', {}, 'Microburbs facts')),
+        h('div', { class: 'brand' }, h('span', { class: 'mark', 'aria-hidden': 'true' }), h('span', { class: 'word' }, 'Groundtruth')),
+        h('span', { class: `pill ${state}` }, STATE_LABEL[state]),
         h('div', { class: 'spacer' }),
         this.briefingButton(view),
-        h('span', { class: `pill ${state}` }, STATE_LABEL[state]),
-        h('button', { class: 'icon-btn', 'aria-label': 'Collapse panel', onClick: () => this.toggle() }, '›')),
-      h('div', { class: 'body' }, this.briefing && this.briefingGnaf(view) ? this.briefing.captions() : null, ...this.bodyFor(view)));
+        h('button', { class: 'icon-btn', 'aria-label': 'Collapse panel', title: 'Collapse to a slim tab', onClick: () => this.toggle() }, '⇥')),
+      h('div', { class: 'body' }, ...body));
     this.wrap.replaceChildren(tab, sheet);
   }
 
@@ -109,23 +125,31 @@ export class Panel {
     if (this.view) this.render(this.view);
   }
 
-  private stateOf(v: PanelView): MatchState | 'LOADING' | 'ERROR' {
+  private stateOf(v: PanelView): PanelState {
     if (v.kind === 'loading' || v.kind === 'manual') return 'LOADING';
     if (v.kind === 'error') return 'ERROR';
     return v.picked ? 'EXACT' : v.resolve.state;
   }
 
+  private skeleton(): HTMLElement {
+    const sk = (...lines: string[]) => h('div', { class: 'skel' }, ...lines.map((c) => h('div', { class: `shimmer ${c}` })));
+    return h('div', { class: 'loading', 'aria-busy': 'true', 'aria-label': 'Looking up this home' },
+      sk('w30', 'num', 'w80'), sk('w30', 'num', 'w55', 'w80'));
+  }
+
   private bodyFor(v: PanelView): HTMLElement[] {
     switch (v.kind) {
       case 'loading':
-        return [this.receipt(v.ex, null), h('div', { class: 'loading', 'aria-busy': 'true', 'aria-label': 'Looking up this home' }, h('div', { class: 'shimmer' }), h('div', { class: 'shimmer' }))];
+        return [h('div', { class: 'verdict', 'aria-hidden': 'true' }, h('div', { class: 'shimmer w30' }), h('div', { class: 'shimmer h2', style: 'margin-top:10px' }), h('div', { class: 'shimmer w55', style: 'margin-top:8px' })),
+          this.receipt(v.ex, null, undefined, 'LOADING'), this.skeleton()];
       case 'error':
-        return [v.ex ? this.receipt(v.ex, null) : null,
+        return [verdictEl({ kicker: 'Connection', headline: ['Can’t reach ', 'Groundtruth', ' right now'], sub: null, tone: 'bad' }),
+          v.ex ? this.receipt(v.ex, null, undefined, 'ERROR') : null,
           h('div', { class: 'err', role: 'alert' }, h('b', {}, 'Can’t reach Groundtruth'), v.message),
           h('div', { class: 'row' }, h('button', { class: 'btn', onClick: () => this.handlers.onRetry() }, 'Try again'),
             h('button', { class: 'btn ghost', onClick: () => this.render({ kind: 'manual', prefill: v.ex?.raw ?? '' }) }, 'Type address'))].filter(Boolean) as HTMLElement[];
       case 'manual':
-        return [this.manualForm(v.prefill)];
+        return [verdictEl({ kicker: 'Manual lookup', headline: ['Which ', 'home', ' should we check?'], sub: 'Type the full address, including the unit number if there is one.', tone: 'neutral' }), this.manualForm(v.prefill)];
       case 'result':
         return this.resultBody(v);
     }
@@ -135,15 +159,32 @@ export class Panel {
     return h('div', { class: 'msg' }, h('button', { class: 'link', onClick: () => this.render({ kind: 'manual', prefill: ex.raw }) }, 'Wrong home?'), ' Type the address yourself.');
   }
 
+  private stateVerdict(st: PanelState, v: Extract<PanelView, { kind: 'result' }>): Verdict {
+    const msg = v.resolve.message ?? null;
+    switch (st) {
+      case 'BUILDING': return { kicker: 'Building found', headline: ['Pick the ', 'unit', ' to see its facts'], sub: msg ?? 'The listing names the building, not the unit. We won’t guess.', tone: 'warn' };
+      case 'CHOOSE': return { kicker: 'More than one match', headline: ['', `${v.resolve.candidates.length || 'Several'} homes`, ' share this address'], sub: msg ?? 'Pick the one in the listing.', tone: 'info' };
+      case 'NO_MATCH': return { kicker: 'No match', headline: ['We couldn’t match ', 'this home', ''], sub: msg ?? 'A wrong home is worse than no answer, so we show nothing.', tone: 'bad' };
+      case 'OUT_OF_AREA': return { kicker: 'Outside coverage', headline: ['This home is ', 'outside', ' the pilot area'], sub: msg ?? 'No data call was made.', tone: 'neutral' };
+      default: return factsVerdict(v.facts);
+    }
+  }
+
   private resultBody(v: Extract<PanelView, { kind: 'result' }>): HTMLElement[] {
-    const out: HTMLElement[] = [this.receipt(v.ex, v.resolve, v.picked)];
     const st = v.picked ? 'EXACT' : v.resolve.state;
-    if (st !== 'EXACT' && v.resolve.message) out.push(h('div', { class: 'msg' }, v.resolve.message));
+    const cta = st === 'NO_MATCH'
+      ? h('div', { class: 'vcta' }, h('button', { class: 'btn', onClick: () => this.render({ kind: 'manual', prefill: v.ex.raw }) }, 'Type the address'))
+      : null;
+    const out: HTMLElement[] = [
+      st === 'EXACT' && v.factsPending ? h('div', { class: 'verdict', 'aria-hidden': 'true' }, h('div', { class: 'shimmer w30' }), h('div', { class: 'shimmer h2', style: 'margin-top:10px' })) : verdictEl(this.stateVerdict(st, v), cta),
+      this.receipt(v.ex, v.resolve, v.picked, st),
+    ];
     if (st === 'BUILDING') out.push(this.buildingBlock(v));
     if (st === 'CHOOSE') out.push(this.candidateList('Which home is it?', v.resolve.candidates));
-    if (st === 'OUT_OF_AREA') out.push(h('div', { class: 'card na' }, h('h3', {}, 'Outside the pilot area'), h('div', { class: 'big' }, 'Groundtruth covers the 29 City of Sydney suburbs for now.')));
+    if (st === 'OUT_OF_AREA') out.push(h('section', { class: 'card na' }, h('h3', {}, 'Where Groundtruth works'),
+      h('div', { class: 'big' }, 'The 29 suburbs of the City of Sydney, for now.'), h('div', { class: 'coverage' }, ...COVERAGE.map((s) => h('span', {}, s)))));
     if (st === 'EXACT') {
-      if (v.factsPending) out.push(h('div', { class: 'loading', 'aria-busy': 'true' }, h('div', { class: 'shimmer' }), h('div', { class: 'shimmer' })));
+      if (v.factsPending) out.push(this.skeleton());
       else if (v.facts) out.push(...factCards(v.facts, this.guide));
       else out.push(h('div', { class: 'err', role: 'alert' }, h('b', {}, 'Facts unavailable'), v.factsError ?? 'The proxy did not return facts.',
         h('div', { style: 'margin-top:8px' }, h('button', { class: 'btn', onClick: () => this.handlers.onRetry() }, 'Try again'))));
@@ -151,7 +192,7 @@ export class Panel {
     const c3 = this.context3d(v);
     if (c3) out.push(c3);
     out.push(this.wrongHome(v.ex));
-    out.push(h('div', { class: 'foot' }, 'Only the address was read from this page. Data: Microburbs, G-NAF.'));
+    out.push(h('div', { class: 'foot' }, h('span', {}, 'Only the address was read from this page.'), h('span', {}, 'Data: Microburbs · G-NAF')));
     return out;
   }
 
@@ -166,9 +207,9 @@ export class Panel {
   }
 
   private buildingBlock(v: Extract<PanelView, { kind: 'result' }>): HTMLElement {
-    const beds = [1, 2, 3, 4].map((n) => h('button', { class: 'btn ghost', 'aria-pressed': String(v.bedrooms === n), onClick: () => this.handlers.onBedrooms(n) }, n === 4 ? '4+' : String(n)));
+    const beds = [1, 2, 3, 4].map((n) => h('button', { type: 'button', 'aria-pressed': String(v.bedrooms === n), onClick: () => this.handlers.onBedrooms(n) }, n === 4 ? '4+' : String(n)));
     return h('section', { class: 'card', 'aria-label': 'Narrow down the unit' },
-      h('h3', {}, 'Which unit?'),
+      h('h3', {}, 'Which unit?', h('span', { class: 'count' }, `${v.resolve.candidates.length} units`)),
       h('div', { class: 'sub' }, 'The listing doesn’t say which unit. How many bedrooms?'),
       h('div', { class: 'beds', role: 'group', 'aria-label': 'Bedrooms' }, ...beds),
       v.resolve.candidates.length ? this.unitList(v.resolve.candidates) : null);
@@ -180,21 +221,41 @@ export class Panel {
   }
 
   private candidateList(title: string, cands: readonly Candidate[]): HTMLElement {
-    return h('section', { class: 'card' }, h('h3', {}, title), cands.length ? this.unitList(cands) : h('div', { class: 'sub' }, 'No candidates returned.'));
+    return h('section', { class: 'card' }, h('h3', {}, title, h('span', { class: 'count' }, `${cands.length} found`)), cands.length ? this.unitList(cands) : h('div', { class: 'sub' }, 'No candidates returned.'));
   }
 
-  private receipt(ex: Extraction, r: ResolveResponse | null, picked?: Candidate): HTMLElement {
+  private setReceiptOpen(sec: HTMLElement, btn: HTMLElement, open: boolean): void {
+    this.receiptOpen = open;
+    sec.classList.toggle('open', open);
+    btn.setAttribute('aria-expanded', String(open));
+    try { sessionStorage.setItem('gt:receipt', open ? '1' : '0'); } catch { /* ignore */ }
+  }
+
+  private receipt(ex: Extraction, r: ResolveResponse | null, picked: Candidate | undefined, st: PanelState): HTMLElement {
     const checks = r?.receipt?.checks ?? {};
-    const checkEls = Object.entries(checks).map(([k, ok]) => h('span', { class: ok ? 'y' : 'n' }, `${ok ? '✓' : '✗'} ${k}`));
+    const entries = Object.entries(checks);
+    const passed = entries.filter(([, ok]) => ok).length;
+    const checkEls = entries.map(([k, ok]) => h('span', { class: ok ? 'y' : 'n' }, `${ok ? '✓' : '✗'} ${k}`));
     const gnaf = picked?.gnafId ?? r?.gnafId ?? null;
-    return h('section', { class: 'receipt', 'aria-label': 'Match receipt' },
-      h('div', { class: 'ttl' }, h('span', {}, 'Match receipt'), h('span', {}, r ? `conf ${Math.round(r.confidence)}` : '…')),
+    const open = this.receiptOpen ?? (st !== 'EXACT' && st !== 'LOADING');
+    const idLine = gnaf ?? (picked ? picked.label : r?.receipt?.normalised) ?? ex.raw;
+    const meta = r ? `${entries.length ? `${passed}/${entries.length} checks · ` : ''}conf ${Math.round(r.confidence)}` : '';
+    const sec = h('section', { class: `receipt ${st}${open ? ' open' : ''}`, 'aria-label': 'Match receipt' });
+    const strip = h('button', { class: 'strip', type: 'button', 'aria-expanded': String(open), title: 'Show the full match receipt',
+      onClick: () => this.setReceiptOpen(sec, strip, !sec.classList.contains('open')) },
+      h('span', { class: 'seal', 'aria-hidden': 'true' }, SEAL[st]),
+      h('span', { class: 'who' }, h('b', {}, STRIP_TITLE[st]), h('span', {}, idLine)),
+      h('span', { class: 'meta' }, meta),
+      h('span', { class: 'chev', 'aria-hidden': 'true' }));
+    sec.append(strip, h('div', { class: 'rbody' },
+      h('div', { class: 'ttl' }, h('span', {}, 'Match receipt'), h('span', {}, r ? `confidence ${Math.round(r.confidence)}` : '…')),
       h('dl', {},
         h('dt', {}, 'read'), h('dd', {}, ex.raw),
         h('dt', {}, 'from'), h('dd', {}, `${this.opts.siteLabel?.(ex) ?? (ex.source === 'manual' ? 'you' : ex.source === 'rea' ? 'realestate.com.au' : 'domain.com.au')} · ${FROM_LABEL[ex.from] ?? ex.from}`),
         h('dt', {}, 'normalised'), h('dd', {}, picked ? picked.label : r?.receipt?.normalised ?? '…'),
         h('dt', {}, 'g-naf'), h('dd', {}, gnaf ?? '—'),
-        checkEls.length ? h('dt', {}, 'checks') : null, checkEls.length ? h('dd', { class: 'checks' }, ...checkEls) : null));
+        checkEls.length ? h('dt', {}, 'checks') : null, checkEls.length ? h('dd', { class: 'checks' }, ...checkEls) : null)));
+    return sec;
   }
 
   private manualForm(prefill: string): HTMLElement {

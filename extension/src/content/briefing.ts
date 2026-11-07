@@ -164,14 +164,15 @@ export class BriefingControl {
 }
 
 export const BRIEFING_CSS = /* css */ `
-.brief-btn { background: #f5f1e6; color: var(--ink); border: 0; border-radius: 999px; padding: 6px 10px; cursor: pointer; font: 700 11px/1 var(--mono); letter-spacing: .04em; white-space: nowrap; transition: background var(--dur) var(--ease), transform var(--dur) var(--ease); }
-.brief-btn:hover { background: #fff; }
+.brief-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--ink); color: var(--paper); border: 0; border-radius: 999px; padding: 7px 11px; cursor: pointer; font: 650 11.5px/1 var(--sans); white-space: nowrap; transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease); }
+.brief-btn:hover { opacity: .86; }
 .brief-btn:active { transform: translateY(1px); }
 .brief-btn[aria-pressed="true"] { background: var(--bad); color: #fff; }
-.brief-cap { position: sticky; top: 52px; z-index: 1; background: var(--ink); color: #c9d3df; border-radius: 10px; padding: 10px 12px; font: 13px/1.5 var(--sans); box-shadow: 0 8px 20px -10px rgba(14,23,38,.6); }
+.brief-cap { position: sticky; top: 56px; z-index: 2; background: var(--ink); color: color-mix(in srgb, var(--paper) 70%, transparent); border-radius: var(--r-md); padding: 12px 14px; font: 13.5px/1.55 var(--sans); box-shadow: 0 12px 28px -14px rgba(0,0,0,.6); }
+.brief-cap:empty { display: none; }
 .brief-cap span + span::before { content: " "; }
-.brief-cap .now { color: #fff; font-weight: 600; }
-.brief-cap .done { color: #8193a8; }
+.brief-cap .now { color: var(--paper); font-weight: 600; }
+.brief-cap .done { opacity: .6; }
 .brief-cap .err-line { color: #ffb4b8; }
 @media (prefers-reduced-motion: reduce) { .brief-btn { transition: none; } }
 `;

@@ -60,7 +60,7 @@ describe("buildContext3D", () => {
 describe("getContext3D (mock upstream)", () => {
   beforeEach(() => clearContext3DCache());
 
-  it("builds the Surry Hills block: subject highlighted, heights 9-45 m, FSR fallback labelled", async () => {
+  it("builds the Surry Hills block from real lots: subject highlighted, heights 9-45 m, FSR fallback labelled", async () => {
     const r = await getContext3D(G, mockUpstream);
     expect(r.available).toBe(true);
     const lots = r.lots.features;
@@ -72,7 +72,7 @@ describe("getContext3D (mock upstream)", () => {
     expect(Math.max(...hs)).toBe(45);
     expect(lots.some((f) => f.properties.source === "fsr-estimate" && f.properties.maxHeightM === 19.2)).toBe(true);
     expect(r.heightSource).toBe("mixed");
-    expect(r.tallestNeighbour).toMatchObject({ maxHeightM: 45, storeys: 14, source: "hob", direction: "west" });
+    expect(r.tallestNeighbour).toMatchObject({ maxHeightM: 45, storeys: 14, source: "hob", direction: "north-west" });
     expect(r.noise?.features.length).toBeGreaterThan(0);
     expect(r.busyRoads?.features.length).toBe(2);
   });

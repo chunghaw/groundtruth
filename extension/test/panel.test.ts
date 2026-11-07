@@ -85,4 +85,28 @@ describe('Panel', () => {
     p.mount();
     expect(document.querySelector('groundtruth-panel')).not.toBeNull();
   });
+
+  it('leads with a one-line verdict and a collapsible verified-home strip', () => {
+    sessionStorage.removeItem('gt:receipt');
+    const p = new Panel(handlers());
+    p.render({ kind: 'result', ex, resolve: resolve('EXACT'), bedrooms: null, facts: { gnafId: 'GANSW1', facts: {
+      agentQuoting: { available: true, data: { agency_name: 'Acme', median_deviation_pct: 6.5, underquote_rate_pct: 40, total_sales: 12 } } } } });
+    expect(q(p, '.verdict h2')[0].textContent).toBe('Agency usually sells 6.5% over guide');
+    const sec = q(p, 'section.receipt')[0] as HTMLElement;
+    expect(sec.classList.contains('open')).toBe(false); // EXACT starts compact
+    expect(sec.textContent).toContain('Verified home');
+    expect(sec.textContent).toContain('4/4 checks');
+    (q(p, 'section.receipt .strip')[0] as HTMLButtonElement).click();
+    expect(sec.classList.contains('open')).toBe(true);
+    expect(q(p, 'section.receipt dl dd').length).toBeGreaterThanOrEqual(4);
+    sessionStorage.removeItem('gt:receipt');
+  });
+
+  it('non-EXACT states open the receipt and explain themselves', () => {
+    sessionStorage.removeItem('gt:receipt');
+    const p = new Panel(handlers());
+    p.render({ kind: 'result', ex, resolve: resolve('NO_MATCH', { message: 'No home matched' }), facts: null, bedrooms: null });
+    expect((q(p, 'section.receipt')[0] as HTMLElement).classList.contains('open')).toBe(true);
+    expect(q(p, '.verdict')[0].textContent).toContain('No home matched');
+  });
 });

@@ -38,10 +38,40 @@ export interface Context3D {
   readonly notes: readonly string[];
 }
 
-export type Overlay = 'noise' | 'roads';
+export type Overlay = 'noise' | 'roads' | 'headroom';
+export const OVERLAYS: readonly Overlay[] = ['noise', 'roads', 'headroom'];
+
+/** One lot that could legally rise >= 2 storeys above what stands on it today. */
+export interface HeadroomLot {
+  readonly distanceM: number;
+  readonly direction: string;
+  readonly storeys: number;
+  readonly maxHeightM: number;
+  readonly actualM: number;
+  readonly source: HeightSource;
+}
+
+/**
+ * What the map learnt by comparing today's buildings (OpenStreetMap render_height) with the
+ * permitted envelope. `known` is false when no building heights could be read (offline basemap,
+ * no OSM coverage): the card then falls back to permitted-height captions.
+ */
+export interface HeadroomInsight {
+  readonly known: boolean;
+  readonly nearM: number;
+  /** Lots within nearM that could rise >= 2 storeys. */
+  readonly count: number;
+  readonly minStoreys: number;
+  readonly maxStoreys: number;
+  readonly biggest: HeadroomLot | null;
+  /** Height of the home's own building today, if matched. */
+  readonly subjectActualM: number | null;
+}
 
 export interface MapController {
   setOverlay(layer: Overlay, on: boolean): void;
+  resetView?(): void;
+  readonly insight?: HeadroomInsight | null;
   destroy(): void;
 }
 

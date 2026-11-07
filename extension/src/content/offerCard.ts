@@ -43,11 +43,13 @@ export function offerCeilingCard(avmFact: Fact | undefined, quotingFact: Fact | 
 }
 
 export const OFFER_CSS = /* css */ `
-.card.offer { border-left: 3px solid var(--harbour); }
-.offer-pill { display: inline-block; margin-top: 10px; padding: 5px 10px; border-radius: 999px; font: 700 11px/1.2 var(--mono); letter-spacing: .02em; background: var(--grey-wash); color: var(--grey); }
+.card.offer { background: linear-gradient(180deg, var(--paper-2), var(--paper) 70%); }
+.card.offer label.sub { display: block; }
+.offer-pill { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 6px 10px; border-radius: 999px; font: 650 11.5px/1.2 var(--sans); background: var(--grey-wash); color: var(--grey); }
+.offer-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .offer-pill.believable { background: var(--ok-wash); color: var(--ok); }
 .offer-pill.low { background: var(--bad-wash); color: var(--bad); }
 .offer-pill.above { background: var(--warn-wash); color: var(--warn); }
-.card.offer .big { margin-top: 6px; }
-.offer-maths { margin-top: 4px; font: 11px/1.45 var(--mono); color: var(--ink-3); }
+.card.offer .big { margin-top: 8px; }
+.offer-maths { margin-top: 6px; font: 11px/1.5 var(--mono); color: var(--ink-3); }
 `;

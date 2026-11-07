@@ -30,6 +30,12 @@
           "block": "center"
         },
         {
+          "do": "clickPanel",
+          "selector": "section.receipt:not(.open) .strip",
+          "optional": true,
+          "timeout": 400
+        },
+        {
           "do": "hoverPanel",
           "selector": "section.receipt dl dd:nth-of-type(4)"
         }

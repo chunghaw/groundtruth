@@ -11,3 +11,5 @@ next-env.d.ts
 *.tsbuildinfo
 .vercel
 .env*
+.next-*/
+src/.next-*/

@@ -16,7 +16,7 @@ function scalarRows(data: unknown, limit = 6): HTMLElement | null {
   return rows.length ? h('table', { class: 'mini' }, ...rows) : null;
 }
 
-function card(title: string, fact: Fact | undefined, body: (data: any) => HTMLElement[] | null, extraClass = ''): HTMLElement {
+function card(title: string, fact: Fact | undefined, body: (data: any) => HTMLElement[] | null, extraClass = '', source = 'Microburbs'): HTMLElement {
   if (!fact || !fact.available || fact.data === null || fact.data === undefined) {
     return h('section', { class: 'card na', 'aria-label': title },
       h('h3', {}, title), h('div', { class: 'big' }, fact?.reason ? `Not available: ${fact.reason}` : 'Not available for this home'));
@@ -25,7 +25,40 @@ function card(title: string, fact: Fact | undefined, body: (data: any) => HTMLEl
   try { content = body(fact.data); } catch { content = null; }
   const fallback = scalarRows(fact.data);
   return h('section', { class: `card ${extraClass}`.trim(), 'aria-label': title }, h('h3', {}, title),
-    ...(content ?? (fallback ? [fallback] : [h('div', { class: 'sub' }, 'Data received, nothing to summarise.')])));
+    ...(content ?? (fallback ? [fallback] : [h('div', { class: 'sub' }, 'Data received, nothing to summarise.')])),
+    h('div', { class: 'src' }, `Source: ${source}`));
+}
+
+/** Big figure + unit, so the number carries the weight and the words explain it. */
+function bigFigure(num: string, unit = ''): HTMLElement {
+  return h('div', { class: 'big' }, num, unit ? h('span', { class: 'u' }, /^[a-z]/i.test(unit) ? ` ${unit}` : unit) : null);
+}
+
+/** Show the first `keep` items; the rest sit behind a "+N more" reveal. */
+function reveal(items: HTMLElement[], keep: number, noun: string): HTMLElement[] {
+  if (items.length <= keep) return items;
+  const rest = items.slice(keep);
+  rest.forEach((el) => { el.hidden = true; });
+  const btn = h('button', { class: 'more', type: 'button', 'aria-expanded': 'false', onClick: () => {
+    const open = btn.getAttribute('aria-expanded') !== 'true';
+    rest.forEach((el) => { el.hidden = !open; });
+    btn.setAttribute('aria-expanded', String(open));
+    btn.textContent = open ? 'Show less' : `+${rest.length} more ${noun}`;
+  } }, `+${rest.length} more ${noun}`);
+  return [...items, btn];
+}
+
+/** Linear accuracy scale: where the agency's median sale lands relative to its guide. */
+function deviationScale(dev: number): HTMLElement {
+  const lo = -10, hi = 20;
+  const clamp = Math.max(lo, Math.min(hi, dev));
+  const pos = (v: number) => `${((v - lo) / (hi - lo)) * 100}%`;
+  return h('div', { class: 'scale', role: 'img', 'aria-label': `Median sale ${dev > 0 ? '+' : ''}${dev}% versus guide` },
+    h('div', { class: 'scale-track' }, h('i', { class: 'zone ok', style: `left:${pos(-3)};width:calc(${pos(3)} - ${pos(-3)})` }),
+      h('i', { class: 'zone warn', style: `left:${pos(3)};right:0` }),
+      h('b', { class: 'zero', style: `left:${pos(0)}` }),
+      h('b', { class: 'marker', style: `left:${pos(clamp)}` }, h('span', {}, `${dev > 0 ? '+' : ''}${dev}%`))),
+    h('div', { class: 'scale-labels' }, h('span', {}, `${lo}%`), h('span', { style: `left:${pos(0)}` }, 'at guide'), h('span', {}, `+${hi}%`)));
 }
 
 export function agentQuotingCard(fact: Fact | undefined): HTMLElement {
@@ -41,15 +74,21 @@ export function agentQuotingCard(fact: Fact | undefined): HTMLElement {
     const n = pickNumber(data, ['total_sales', 'n_sales', 'sample_size']);
     const likely = pickNumber(data, ['likely_sale_price']);
     const recent = Array.isArray(data?.recent_sales) ? data.recent_sales.slice(0, 3) : [];
+    const rows = recent.map((x: any) => {
+      const diff = pickNumber(x, ['diff_pct']);
+      return h('li', {}, h('span', { class: 'when' }, String(x.sold_date ?? x.date ?? '').slice(0, 10) || 'recent'),
+        h('span', { class: 'what' }, `${money(pickNumber(x, ['guide_price']))} → ${money(pickNumber(x, ['sold_price']))}`),
+        diff !== null ? h('span', { class: `delta ${diff > 3 ? 'up' : diff < -3 ? 'down' : ''}` }, `${diff > 0 ? '+' : ''}${diff}%`) : null);
+    });
     return [
-      h('div', { class: 'big' }, r !== null ? `${pct(r)} of sales beat the guide` : cohort ?? ''),
-      h('div', { class: 'sub' }, [agency, cohort, n !== null ? `${n} tracked sales` : null, dev !== null ? `median ${dev > 0 ? '+' : ''}${dev}% vs guide` : null].filter(Boolean).join(' · ')),
-      likely !== null ? h('div', { class: 'sub' }, `Likely sale price: ${money(likely)}`) : null,
-      recent.length ? h('table', { class: 'mini', 'aria-label': 'Recent agency sales: guide vs sold' }, ...recent.map((x: any) =>
-        h('tr', {}, h('td', {}, `${money(pickNumber(x, ['guide_price']))} → ${money(pickNumber(x, ['sold_price']))}`), h('td', {}, x.diff_pct !== undefined ? `${x.diff_pct > 0 ? '+' : ''}${x.diff_pct}%` : '')))) : null,
-      alert ? h('div', { class: 'sub', role: 'note', style: 'margin-top:6px;font-weight:600' }, 'Treat the advertised guide as a floor, not an estimate.') : null,
+      r !== null ? bigFigure(pct(r), 'of sales beat the guide') : h('div', { class: 'big' }, cohort ?? ''),
+      h('div', { class: 'sub' }, [agency, cohort, n !== null ? `${n} tracked sales` : null].filter(Boolean).join(' · ')),
+      dev !== null ? deviationScale(dev) : null,
+      likely !== null ? h('div', { class: 'kv' }, h('span', {}, 'Likely sale price'), h('b', {}, money(likely))) : null,
+      rows.length ? h('ol', { class: 'tl', 'aria-label': 'Recent agency sales: guide vs sold' }, ...reveal(rows, 2, 'sales')) : null,
+      alert ? h('div', { class: 'note', role: 'note' }, 'Treat the advertised guide as a floor, not an estimate.') : null,
     ].filter(Boolean) as HTMLElement[];
-  }, alert ? 'alert' : '');
+  }, alert ? 'alert' : '', 'Microburbs · agency sales, guide vs sold');
 }
 
 export function avmRange(d: unknown): AvmRange | null {
@@ -94,7 +133,7 @@ export function avmCard(fact: Fact | undefined, guideState: { value: string }, l
     queueMicrotask(update);
     const date = pickString(d, ['prediction_date', 'date']);
     return [
-      h('div', { class: 'big' }, money(rng.mid)),
+      bigFigure(money(rng.mid), 'estimate'),
       h('div', { class: 'sub' }, `80% range ${money(rng.low)} – ${money(rng.high)}${date ? ` · as of ${date}` : ''}`),
       barSlot,
       h('div', { class: 'range-labels' }, h('span', {}, money(rng.low)), h('span', {}, money(rng.high))),
@@ -103,18 +142,24 @@ export function avmCard(fact: Fact | undefined, guideState: { value: string }, l
       listeners ? null : h('div', { class: 'guide-row' }, input),
       verdict,
     ].filter(Boolean) as HTMLElement[];
-  }, 'hero');
+  }, 'hero', 'Microburbs automated valuation');
 }
 
 export function saleHistoryCard(fact: Fact | undefined): HTMLElement {
   return card('Last sales', fact, (d) => {
     const list = Array.isArray(d) ? d : Array.isArray(d?.sales) ? d.sales : null;
     if (!list || list.length === 0) return [h('div', { class: 'big' }, 'No recorded sales')];
-    const rows = list.slice(0, 4).map((s: any) => h('tr', {},
-      h('td', {}, String(s.date ?? s.sold_date ?? '').slice(0, 10) || '—'),
-      h('td', {}, pickNumber(s, ['price', 'sold_price']) !== null ? money(pickNumber(s, ['price', 'sold_price'])) : String(s.type ?? '—'))));
-    return [h('table', { class: 'mini' }, ...rows)];
-  });
+    const sorted = [...list].sort((a: any, b: any) => String(b.date ?? b.sold_date ?? '').localeCompare(String(a.date ?? a.sold_date ?? '')));
+    const rows = sorted.slice(0, 8).map((x: any, i: number) => {
+      const price = pickNumber(x, ['price', 'sold_price']);
+      const prev = pickNumber(sorted[i + 1], ['price', 'sold_price']);
+      const ch = price !== null && prev ? ((price - prev) / prev) * 100 : null;
+      return h('li', {}, h('span', { class: 'when' }, String(x.date ?? x.sold_date ?? '').slice(0, 10) || '—'),
+        h('span', { class: 'what' }, price !== null ? money(price) : String(x.type ?? '—')),
+        ch !== null ? h('span', { class: 'delta' }, `${ch >= 0 ? '+' : ''}${Math.round(ch)}%`) : null);
+    });
+    return [h('ol', { class: 'tl', 'aria-label': 'Sales of this home' }, ...reveal(rows, 3, 'sales'))];
+  }, '', 'Microburbs sale history · this exact home');
 }
 
 export function streetCard(fact: Fact | undefined): HTMLElement {
@@ -132,11 +177,11 @@ export function streetCard(fact: Fact | undefined): HTMLElement {
     const title = pickString(st, ['title']) ?? pickString(d, ['street']) ?? 'This street';
     return [
       h('table', { class: 'mini' },
-        h('tr', {}, h('td', {}, ''), h('td', {}, `${title} · suburb`)),
+        h('tr', { class: 'head' }, h('td', {}, ''), h('td', {}, `${title} · suburb`)),
         ...shown.map(([label, a, b, f]) => h('tr', {}, h('td', {}, label), h('td', {}, `${a !== null ? f(a) : '—'} · ${b !== null ? f(b) : '—'}`)))),
-      band ? h('div', { class: 'sub', style: 'margin-top:6px' }, `Street forecast rank: ${band}`) : null,
+      band ? h('div', { class: 'kv' }, h('span', {}, 'Street forecast rank'), h('b', {}, band)) : null,
     ].filter(Boolean) as HTMLElement[];
-  });
+  }, '', 'Microburbs street profile, ABS Census');
 }
 
 export function risksCard(fact: Fact | undefined): HTMLElement {
@@ -150,7 +195,7 @@ export function risksCard(fact: Fact | undefined): HTMLElement {
       const val = typeof x?.value === 'string' ? x.value : on ? 'On property' : typeof x === 'string' ? x : '';
       return h('div', { class: 'risk' }, h('span', {}, label), h('span', { class: on ? 'on' : 'off' }, val || (on ? 'On property' : 'Clear')));
     });
-  });
+  }, '', 'Microburbs risk overlays');
 }
 
 export function strataCard(fact: Fact | undefined): HTMLElement {
@@ -159,8 +204,8 @@ export function strataCard(fact: Fact | undefined): HTMLElement {
     if (levy === null) return null;
     const n = pickNumber(d, ['n_properties', 'count']);
     const area = pickString(d, ['area_name', 'suburb']);
-    return [h('div', { class: 'big' }, `${money(levy)}/yr`), h('div', { class: 'sub' }, `${money(levy / 4)} a quarter${area ? ` · ${area}` : ''}${n !== null ? ` · ${n} buildings` : ''}`)];
-  });
+    return [bigFigure(money(levy), '/yr'), h('div', { class: 'sub' }, `${money(levy / 4)} a quarter${area ? ` · ${area}` : ''}${n !== null ? ` · ${n} buildings` : ''}`)];
+  }, '', 'Microburbs strata data');
 }
 
 export function basicsSection(fact: Fact | undefined): HTMLElement {

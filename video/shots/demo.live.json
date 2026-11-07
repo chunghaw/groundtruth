@@ -64,6 +64,12 @@
       ],
       "show": [
         {
+          "do": "clickPanel",
+          "selector": "section.receipt:not(.open) .strip",
+          "optional": true,
+          "timeout": 400
+        },
+        {
           "do": "hoverPanel",
           "selector": "section.receipt dl dd:nth-of-type(1)"
         },
@@ -173,6 +179,12 @@
           "selector": "section.receipt"
         },
         {
+          "do": "clickPanel",
+          "selector": "section.receipt:not(.open) .strip",
+          "optional": true,
+          "timeout": 400
+        },
+        {
           "do": "hoverPanel",
           "selector": "section.receipt dl dd:nth-of-type(2)"
         }
@@ -190,6 +202,12 @@
           "do": "waitPanel",
           "selector": ".pill.EXACT, .pill.BUILDING, .pill.CHOOSE",
           "timeout": 25000
+        },
+        {
+          "do": "clickPanel",
+          "selector": "section.receipt:not(.open) .strip",
+          "optional": true,
+          "timeout": 400
         },
         {
           "do": "hoverPanel",

@@ -1,6 +1,7 @@
 import { Panel } from '../src/content/panel';
 import type { ResolveResponse } from '../src/api-types';
-import { context3dCard, neighbourCaption, subjectCaption } from '../src/context3d/card';
+import { context3dCard, headroomCaption, neighbourCaption, subjectCaption } from '../src/context3d/card';
+import { buildingsFrom, compass, computeHeadroom } from '../src/context3d/headroom';
 import { fetchContext3D, configureContext3DProxy } from '../src/context3d/api';
 import type { Context3D, Context3DHost, MapController } from '../src/context3d/types';
 
@@ -36,6 +37,40 @@ describe('captions', () => {
   });
 });
 
+describe('headroom', () => {
+  // Lots ~11 m wide along a street running east from the home at [151.2, -33.88].
+  const dx = 0.00012;
+  const sqr = (i: number): number[][] => [[151.2 + i * dx, -33.88], [151.2 + (i + 1) * dx, -33.88], [151.2 + (i + 1) * dx, -33.8801], [151.2 + i * dx, -33.8801], [151.2 + i * dx, -33.88]];
+  const lotAt = (i: number, isSubject: boolean, maxHeightM: number | null) => ({ type: 'Feature' as const, geometry: { type: 'Polygon', coordinates: [sqr(i)] }, properties: { gnafId: `G${i}`, isSubject, maxHeightM, source: 'hob' as const, fsr: null, storeys: null } });
+  const data: Context3D = { ...DATA, center: [151.2 + dx / 2, -33.88005], subject: { maxHeightM: 12, storeys: 4, source: 'hob' }, lots: { type: 'FeatureCollection', features: [lotAt(0, true, 12), lotAt(1, false, 30), lotAt(2, false, 12), lotAt(3, false, 30), lotAt(4, false, 45)] } };
+  const bld = (i: number, h: number) => ({ geometry: { type: 'Polygon', coordinates: [sqr(i).map(([x, y]) => [x + dx * 0.1 * (x > 151.2 + i * dx ? -1 : 1), y])] }, properties: { render_height: h, render_min_height: 0 } });
+
+  it('ghosts only lots with >= 2 storeys of room above today, and summarises the nearest 100 m', () => {
+    const r = computeHeadroom(data, buildingsFrom([bld(0, 6), bld(1, 10), bld(2, 9), bld(3, 28)]));
+    expect(r.insight.known).toBe(true);
+    expect(r.subjectBuilding?.height).toBe(6);
+    expect(r.insight.subjectActualM).toBe(6);
+    // lot1: 30-10 = 20 m -> 6 storeys; lot2: 3 m (no); lot3: 2 m (no); lot4: no building -> not guessed
+    expect(r.ghosts.features.map((f) => [f.properties.base, f.properties.top, f.properties.headroomStoreys])).toEqual([[10, 30, 6]]);
+    expect(r.insight).toMatchObject({ count: 1, maxStoreys: 6, biggest: { direction: 'east', storeys: 6, actualM: 10, maxHeightM: 30 } });
+    expect(headroomCaption(r.insight)).toEqual({ lead: '1 lot within 100 m could rise ~6 more storeys', detail: expect.stringContaining('Biggest: 11 m east, +6 storeys (≈10 m today → 30 m allowed)') });
+  });
+
+  it('falls back to full envelopes (and no headroom caption) when no building heights are known', () => {
+    const r = computeHeadroom(data, []);
+    expect(r.insight.known).toBe(false);
+    expect(r.ghosts.features.map((f) => [f.properties.base, f.properties.top, f.properties.measured])).toEqual([[0, 30, false], [0, 30, false], [0, 45, false]]);
+    expect(headroomCaption(r.insight)).toBeNull();
+  });
+
+  it('ignores hidden or heightless building parts; compass and empty captions', () => {
+    expect(buildingsFrom([{ geometry: { type: 'Polygon', coordinates: [sqr(0)] }, properties: { render_height: 9, hide_3d: true } }, { geometry: { type: 'Point', coordinates: [0, 0] }, properties: { render_height: 9 } }])).toEqual([]);
+    expect(compass(-1, 1)).toBe('north-west');
+    expect(headroomCaption({ known: true, nearM: 100, count: 0, minStoreys: 0, maxStoreys: 0, biggest: null, subjectActualM: null })?.lead).toMatch(/^Nothing within 100 m/);
+    expect(headroomCaption({ known: true, nearM: 100, count: 3, minStoreys: 2, maxStoreys: 9, biggest: { distanceM: 64, direction: 'north-west', storeys: 9, maxHeightM: 45, actualM: 16, source: 'hob' }, subjectActualM: 7 })?.lead).toBe('3 lots within 100 m could rise 2–9 more storeys');
+  });
+});
+
 describe('context3dCard', () => {
   const realIO = (globalThis as any).IntersectionObserver;
   afterEach(() => { (globalThis as any).IntersectionObserver = realIO; });
@@ -53,8 +88,26 @@ describe('context3dCard', () => {
     expect(host.load).toHaveBeenCalledWith('GANSW1');
     expect(host.mount).toHaveBeenCalledTimes(1);
     expect(el.textContent).toContain('Lot 58 m west: up to 45 m (≈14 storeys)');
-    expect(el.textContent).toContain('faded = estimated from FSR');
+    expect(el.textContent).toContain('Some limits estimated from FSR');
     el.remove();
+  });
+
+  it('upgrades the caption to the headroom insight once the map reports it, and wires Reset view', async () => {
+    (globalThis as any).IntersectionObserver = undefined;
+    const resetView = vi.fn();
+    const ctl: MapController = { setOverlay: vi.fn(), resetView, destroy: vi.fn(), insight: { known: true, nearM: 100, count: 2, minStoreys: 6, maxStoreys: 6, biggest: { distanceM: 40, direction: 'north', storeys: 6, maxHeightM: 27, actualM: 7, source: 'hob' }, subjectActualM: 6 } };
+    const host: Context3DHost = { load: vi.fn(async () => DATA), mount: vi.fn(async () => ctl) };
+    const el = context3dCard('GANSW1', host);
+    await flush(); await flush();
+    expect(el.querySelector('.c3-lead')?.textContent).toBe('2 lots within 100 m could rise ~6 more storeys');
+    expect(el.textContent).toContain('Biggest: 40 m north');
+    expect(el.textContent).toContain('about 6 m today');
+    [...el.querySelectorAll('button')].find((b) => b.textContent === 'Reset view')!.click();
+    expect(resetView).toHaveBeenCalled();
+    const hr = [...el.querySelectorAll('button')].find((b) => b.textContent === 'Headroom')!;
+    expect(hr.getAttribute('aria-pressed')).toBe('true');
+    hr.click();
+    expect(ctl.setOverlay).toHaveBeenCalledWith('headroom', false);
   });
 
   it('toggles overlays on the map controller', async () => {

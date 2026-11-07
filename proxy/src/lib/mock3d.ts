@@ -1,32 +1,22 @@
 /**
- * MOCK upstream for the 3D context card: a believable Surry Hills block (24 lots, HOB 9-45 m,
- * one FSR-only pocket), noise regions and busy roads. Shapes mirror the OpenAPI examples.
- * The geometry is the same for every GNAF; only the subject lot's gnaf_pid changes.
+ * MOCK upstream for the 3D context card: real Surry Hills cadastre lots (see mock3d-lots.ts) with
+ * invented-but-plausible height controls (HOB 9-45 m, one FSR-only pocket), noise and busy roads.
+ * Shapes mirror the OpenAPI examples. Same geometry for every GNAF; only the subject's gnaf_pid changes.
  */
 import type { Upstream } from "./microburbs";
 import { mPerDegLng, type Pos } from "./geo";
+import { MOCK_CENTRE, MOCK_LOT_RINGS, MOCK_SUBJECT_INDEX } from "./mock3d-lots";
 
-const C: Pos = [151.20905, -33.88155]; // near Foster St, Surry Hills
+const C: Pos = MOCK_CENTRE; // Surry Hills; the lots below are real cadastre outlines around it
 const toLL = (x: number, y: number): Pos => [Math.round((C[0] + x / mPerDegLng(C[1])) * 1e7) / 1e7, Math.round((C[1] + y / 111_320) * 1e7) / 1e7];
 const rect = (x0: number, y0: number, x1: number, y1: number): Pos[] => [toLL(x0, y0), toLL(x1, y0), toLL(x1, y1), toLL(x0, y1), toLL(x0, y0)];
 const ok = (data: unknown): Upstream => ({ status: 200, body: { data } });
 
-/** Lots in local metres (x east, y north). Subject = terrace at x[-2,28], y[0,7.5]. */
-function lotRects(): Array<[number, number, number, number]> {
-  const lots: Array<[number, number, number, number]> = [];
-  for (const [y0, y1] of [[-60, -30], [-30, 0], [0, 30], [30, 60]]) lots.push([-80, y0, -10, y1]); // west of Foster Ln: tower sites
-  for (let i = 0; i < 12; i++) lots.push([-4, -45 + i * 7.5, 28, -45 + (i + 1) * 7.5]); // terraces
-  for (const [y0, y1] of [[-60, -30], [-30, 0], [0, 30], [30, 60]]) lots.push([36, y0, 90, y1]); // east of Riley St
-  for (const [x0, x1] of [[-80, -30], [-30, 20], [20, 60], [60, 90]]) lots.push([x0, 70, x1, 105]); // north row
-  return lots;
-}
-const SUBJECT_INDEX = 4 + 6; // terrace y[0,7.5]
-
 function parcelsMock(gnaf: string): Upstream {
-  const features = lotRects().map((r, i) => ({
+  const features = MOCK_LOT_RINGS.map((ring, i) => ({
     type: "Feature",
-    geometry: { type: "MultiPolygon", coordinates: [[rect(...r)]] },
-    properties: { gnaf_pid: i === SUBJECT_INDEX ? gnaf : `GANSW7${String(10_000_000 + i * 7919).padStart(8, "0")}`, is_subject: i === SUBJECT_INDEX },
+    geometry: { type: "MultiPolygon", coordinates: [[ring]] },
+    properties: { gnaf_pid: i === MOCK_SUBJECT_INDEX ? gnaf : `GANSW7${String(10_000_000 + i * 7919).padStart(8, "0")}`, is_subject: i === MOCK_SUBJECT_INDEX },
   }));
   return ok({ gnaf_pid: gnaf, radius_m: 200, count: features.length, parcels: { type: "FeatureCollection", features } });
 }
@@ -49,12 +39,13 @@ function buildingControlsMock(suburb: string): Upstream {
       geojson: {
         type: "FeatureCollection",
         features: [
-          hobZone(45, -300, 0, -7, 300), // Elizabeth St corridor north of the subject: towers
-          hobZone(27, -300, -300, -7, 0),
-          hobZone(12, -7, -300, 32, 66), // terrace strip incl. the subject
-          hobZone(22, 32, -300, 300, 0),
-          // x[32,300] y[0,66]: deliberately no HOB -> FSR fallback
-          hobZone(9, -300, 66, 300, 300), // heritage terraces to the north
+          // local metres from the home (x east, y north); the subject's terrace strip stays at 12 m
+          hobZone(45, -300, 25, -45, 300), // north-west: tower sites
+          hobZone(27, -300, -300, -45, 25), // west: mid-rise
+          hobZone(12, -45, -300, 45, 300), // Crown St strip incl. the subject
+          hobZone(22, 45, -300, 300, -30), // south-east
+          // x[45,300] y[-30,40]: deliberately no HOB -> FSR fallback
+          hobZone(9, 45, 40, 300, 300), // heritage terraces, north-east
         ],
       },
     },
